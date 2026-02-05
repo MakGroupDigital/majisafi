@@ -8,6 +8,7 @@ import GammeSection from './components/GammeSection';
 import GammePage from './components/GammePage';
 import HomePage from './components/HomePage';
 import RecyclingProgram from './components/RecyclingProgram';
+import DistributorsPage from './components/DistributorsPage';
 import { BottleSize, CartItem } from './types';
 import { BOTTLE_PRICES, BRAND_COLORS, COMPANY_INFO } from './constants';
 import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon, Mail, Phone, MapPin } from 'lucide-react';
@@ -155,6 +156,8 @@ const App: React.FC = () => {
             </div>
           </div>
         );
+      case 'distributeurs':
+        return <DistributorsPage />;
       case 'parametres':
         return (
           <div className="bg-white rounded-3xl p-12 border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -220,7 +223,7 @@ const App: React.FC = () => {
                 ✕
               </button>
               <nav className="flex flex-col gap-4">
-                {[{ label: 'Accueil', id: 'accueil' }, { label: 'Commander', id: 'commander' }, { label: 'Mes Commandes', id: 'commandes' }, { label: 'Profil', id: 'profil' }].map(item => (
+                {[{ label: 'Accueil', id: 'accueil' }, { label: 'Commander', id: 'commander' }, { label: 'Trouver un relais', id: 'distributeurs' }, { label: 'Mes Commandes', id: 'commandes' }, { label: 'Profil', id: 'profil' }].map(item => (
                   <button
                     key={item.id}
                     onClick={() => { setCurrentPage(item.id); setIsMenuOpen(false); }}
