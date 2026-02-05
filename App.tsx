@@ -9,8 +9,8 @@ import GammePage from './components/GammePage';
 import HomePage from './components/HomePage';
 import RecyclingProgram from './components/RecyclingProgram';
 import { BottleSize, CartItem } from './types';
-import { BOTTLE_PRICES, BRAND_COLORS } from './constants';
-import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon } from 'lucide-react';
+import { BOTTLE_PRICES, BRAND_COLORS, COMPANY_INFO } from './constants';
+import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon, Mail, Phone, MapPin } from 'lucide-react';
 
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -47,7 +47,7 @@ const App: React.FC = () => {
         return (
           <RecyclingProgram
             onStartRecycling={() => {
-              alert('Merci de votre intérêt!\n\nPour commencer le programme de recyclage:\n\n1. Appelez-nous: +243 97 123 4567\n2. Ou visitez notre site: www.majisafi.cd\n3. Ou commandez en ligne et mentionnez le recyclage\n\nVous recevrez un kit de démarrage avec tous les détails.');
+              alert(`Merci de votre intérêt!\n\nPour commencer le programme de recyclage:\n\n1. Appelez-nous: ${COMPANY_INFO.phoneDisplay}\n2. Ou visitez notre usine: ${COMPANY_INFO.address}\n3. Ou commandez en ligne et mentionnez le recyclage\n\nVous recevrez un kit de démarrage avec tous les détails.`);
             }}
           />
         );
@@ -238,22 +238,66 @@ const App: React.FC = () => {
           {renderContent()}
         </main>
 
-        <footer className="mt-auto py-12 px-12 border-t border-slate-100 bg-white">
-          <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="flex flex-col gap-2">
-              <p className="text-slate-400 text-xs font-medium">© 2026 Maji Safi Ya Kuetu. Tous droits réservés.</p>
-              <div className="flex gap-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                <a href="#" className="hover:text-blue-600">Confidentialité</a>
-                <a href="#" className="hover:text-blue-600">Conditions</a>
-                <a href="#" className="hover:text-blue-600">Aide</a>
+        <footer className="mt-auto py-12 px-6 lg:px-12 border-t border-slate-100 bg-gradient-to-br from-slate-50 to-white">
+          <div className="max-w-[1400px] mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+              {/* Company Info */}
+              <div>
+                <h3 className="text-lg font-black text-slate-900 mb-4">{COMPANY_INFO.name}</h3>
+                <p className="text-slate-600 text-sm mb-4">{COMPANY_INFO.fullName}</p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <MapPin size={18} className="text-[#0066CC] flex-shrink-0 mt-0.5" />
+                    <p className="text-slate-600 text-sm">{COMPANY_INFO.address}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail size={18} className="text-[#0066CC] flex-shrink-0" />
+                    <a href={`mailto:${COMPANY_INFO.email}`} className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">
+                      {COMPANY_INFO.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone size={18} className="text-[#0066CC] flex-shrink-0" />
+                    <a href={`tel:${COMPANY_INFO.phone}`} className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">
+                      {COMPANY_INFO.phoneDisplay}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div>
+                <h3 className="text-lg font-black text-slate-900 mb-4">Liens Rapides</h3>
+                <div className="flex flex-col gap-2">
+                  <a href="#" className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">À Propos</a>
+                  <a href="#" className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">Nos Produits</a>
+                  <a href="#" className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">Programme de Recyclage</a>
+                  <a href="#" className="text-slate-600 text-sm hover:text-[#0066CC] transition-colors">Contact</a>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <h3 className="text-lg font-black text-slate-900 mb-4">Moyens de Paiement</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {['M-Pesa', 'Airtel Money', 'Orange Money', 'Visa'].map(m => (
+                    <div key={m} className="px-3 py-2 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-600 text-center">
+                      {m}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-slate-400 text-[10px] font-bold">PAIEMENTS</span>
-              <div className="flex gap-2">
-                {['M-Pesa', 'Airtel', 'Visa', 'Orange'].map(m => (
-                  <div key={m} className="px-2 py-1 bg-slate-50 rounded border border-slate-100 text-[8px] font-bold text-slate-400">{m}</div>
-                ))}
+
+            {/* Bottom Bar */}
+            <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-slate-400 text-xs font-medium">
+                © 2026 {COMPANY_INFO.name}. Tous droits réservés.
+              </p>
+              <div className="flex gap-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <a href="#" className="hover:text-[#0066CC] transition-colors">Confidentialité</a>
+                <a href="#" className="hover:text-[#0066CC] transition-colors">Conditions</a>
+                <a href="#" className="hover:text-[#0066CC] transition-colors">Aide</a>
               </div>
             </div>
           </div>

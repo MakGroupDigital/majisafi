@@ -21,3 +21,14 @@ export const MOCK_USER = {
   avatar: 'https://picsum.photos/seed/user123/200/200',
   membership: 'Premium' as const
 };
+
+export const COMPANY_INFO = {
+  name: 'Maji Safi Ya Kuetu',
+  fullName: 'Maji Safi Ya Kuetu R.D.C (M.S.K. R.D.C)',
+  address: 'Avenue Ma Campagne, Ville de Bunia / Ituri R.D.C',
+  email: 'majisafi-rdc@gmail.com',
+  phone: '+243860089360',
+  phoneDisplay: '+243 86 008 9360',
+  country: 'République Démocratique du Congo',
+  region: 'Ituri, Bunia'
+};
