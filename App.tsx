@@ -9,15 +9,17 @@ import GammePage from './components/GammePage';
 import HomePage from './components/HomePage';
 import RecyclingProgram from './components/RecyclingProgram';
 import DistributorsPage from './components/DistributorsPage';
+import AdminDashboard from './components/admin/AdminDashboard';
 import { BottleSize, CartItem } from './types';
 import { BOTTLE_PRICES, BRAND_COLORS, COMPANY_INFO } from './constants';
-import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon, Mail, Phone, MapPin } from 'lucide-react';
+import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon, Mail, Phone, MapPin, Shield, ArrowUpRight } from 'lucide-react';
 
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('accueil');
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -144,6 +146,18 @@ const App: React.FC = () => {
                   <Clock size={16} className="text-slate-300" />
                 </button>
                 <button
+                  onClick={() => setIsAdminMode(true)}
+                  className="flex items-center justify-between p-6 bg-slate-900 rounded-2xl hover:bg-slate-800 transition-colors shadow-lg group">
+                  <div className="flex items-center gap-4">
+                    <Shield className="text-white group-hover:rotate-12 transition-transform" />
+                    <div className="text-left">
+                      <span className="block font-bold text-white">Espace Employé</span>
+                      <span className="text-xs text-slate-400">Accès au Dashboard</span>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-400" />
+                </button>
+                <button
                   onClick={() => alert('Fonctionnalité: Gérer vos préférences de livraison\n\nAdresse, Horaires, Instructions spéciales')}
                   className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                   <div className="flex items-center gap-4">
@@ -202,6 +216,10 @@ const App: React.FC = () => {
         <p className="text-slate-400 font-bold tracking-widest uppercase text-[10px] animate-pulse">Chargement de Maji Safi...</p>
       </div>
     );
+  }
+
+  if (isAdminMode) {
+    return <AdminDashboard onLogout={() => setIsAdminMode(false)} />;
   }
 
   return (
