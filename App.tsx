@@ -203,7 +203,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-[#FFFFFF]">
-      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      {currentPage === 'profil' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
       <div className="flex-1 flex flex-col min-w-0 relative">
         <NavBar
           cartCount={cart.length}
