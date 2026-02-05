@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L from 'leaflet';
+import 'leaflet-routing-machine';
 import { Navigation, MapPin, Phone, Clock, Search } from 'lucide-react';
-import { BRAND_COLORS, COMPANY_INFO } from '../constants';
 
-// Fix pour les icones Leaflet par défaut qui ne s'affichent pas bien avec React
+// Fix pour les icones Leaflet
 // @ts-ignore
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -14,7 +15,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Icone personnalisée pour l'utilisateur (style Yango/Uber)
+// Icone utilisateur (Bleu Maji Safi)
 const userIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -24,7 +25,7 @@ const userIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Icone pour les distributeurs (Rouge Maji Safi)
+// Icone distributeur (Rouge Marque)
 const distributorIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -34,7 +35,7 @@ const distributorIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Mock data pour les distributeurs à Bunia
+// Données fictives (Bunia)
 const DISTRIBUTORS = [
     {
         id: 1,
@@ -74,7 +75,64 @@ const DISTRIBUTORS = [
     }
 ];
 
-// Composant pour recentrer la carte
+// Composant Routing (Itinéraire)
+const RoutingControl = ({ start, end }: { start: { lat: number, lng: number }, end: { lat: number, lng: number } }) => {
+    const map = useMap();
+    const routingControlRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (!start || !end) return;
+
+        // Nettoyage ancien itinéraire
+        if (routingControlRef.current) {
+            try {
+                map.removeControl(routingControlRef.current);
+            } catch (e) {
+                console.warn("Erreur suppression contrôle", e);
+            }
+            routingControlRef.current = null;
+        }
+
+        // Création nouvel itinéraire
+        // @ts-ignore
+        routingControlRef.current = L.Routing.control({
+            waypoints: [
+                L.latLng(start.lat, start.lng),
+                L.latLng(end.lat, end.lng)
+            ],
+            lineOptions: {
+                styles: [{ color: '#0066CC', opacity: 0.8, weight: 6 }]
+            },
+            createMarker: () => null, // Pas de marqueurs additionnels
+            addWaypoints: false,
+            draggableWaypoints: false,
+            fitSelectedRoutes: true,
+            showAlternatives: false,
+            containerClassName: 'hidden', // Cache les instructions textuelles
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1',
+                language: 'fr'
+            })
+        }).addTo(map);
+
+        // Cacher container instructions
+        const container = routingControlRef.current.getContainer();
+        if (container) container.style.display = 'none';
+
+        return () => {
+            if (routingControlRef.current) {
+                try {
+                    map.removeControl(routingControlRef.current);
+                } catch (e) { }
+                routingControlRef.current = null;
+            }
+        };
+    }, [map, start, end]);
+
+    return null;
+};
+
+// Composant Recentrer
 const RecenterMap = ({ lat, lng }: { lat: number, lng: number }) => {
     const map = useMap();
     useEffect(() => {
@@ -86,16 +144,16 @@ const RecenterMap = ({ lat, lng }: { lat: number, lng: number }) => {
 const DistributorsPage: React.FC = () => {
     const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
     const [selectedDistributor, setSelectedDistributor] = useState<typeof DISTRIBUTORS[0] | null>(null);
+    const [isNavigating, setIsNavigating] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fonction pour obtenir la localisation
     const handleLocateMe = () => {
         setLoading(true);
         setError(null);
 
         if (!navigator.geolocation) {
-            setError("La géolocalisation n'est pas supportée par votre navigateur");
+            setError("Géolocalisation non supportée");
             setLoading(false);
             return;
         }
@@ -110,45 +168,54 @@ const DistributorsPage: React.FC = () => {
             },
             (err) => {
                 console.error(err);
-                // Fallback à Bunia si erreur (pour la démo)
-                setUserLocation({ lat: 1.5646, lng: 30.2505 });
-                setError("Impossible de vous localiser précisément. Position par défaut (Bunia).");
+                setUserLocation({ lat: 1.5646, lng: 30.2505 }); // Bunia default
+                setError("Localisation impossible. Position par défaut (Bunia).");
                 setLoading(false);
             },
             { enableHighAccuracy: true }
         );
     };
 
-    // Initialisation : On demande la localisation au chargement
     useEffect(() => {
         handleLocateMe();
     }, []);
 
-    const openItinerary = (destLat: number, destLng: number) => {
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`;
-        window.open(url, '_blank');
+    const startNavigation = () => {
+        if (userLocation && selectedDistributor) {
+            setIsNavigating(true);
+        }
+    };
+
+    const stopNavigation = () => {
+        setIsNavigating(false);
     };
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl relative">
 
-            {/* Sidebar Liste (Overlay sur mobile comme Yango) */}
+            {/* Sidebar */}
             <div className={`
         absolute md:relative z-[1000] bottom-0 left-0 right-0 md:w-96 bg-white md:h-full 
         transition-transform duration-300 rounded-t-3xl md:rounded-none shadow-2xl md:shadow-none
         flex flex-col max-h-[60vh] md:max-h-full
         ${selectedDistributor ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}
       `}>
-                {/* Poignée mobile */}
                 <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-2 md:hidden"></div>
 
-                <div className="p-6 border-b border-slate-100 bg-white">
-                    <h2 className="text-2xl font-black text-slate-900 mb-2">Distributeurs</h2>
-                    <p className="text-slate-500 text-sm">Trouvez le point relais Maji Safi le plus proche de vous.</p>
+                <div className="p-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+                    <div className="flex justify-between items-center mb-2">
+                        <h2 className="text-2xl font-black text-slate-900">Distributeurs</h2>
+                        {isNavigating && (
+                            <button onClick={stopNavigation} className="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-full font-bold hover:bg-red-100">
+                                Arrêter
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-slate-500 text-sm mb-4">Maji Safi Ya Kuetu - Points Relais</p>
 
                     <button
                         onClick={handleLocateMe}
-                        className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-blue-50 text-[#0066CC] rounded-xl font-bold hover:bg-blue-100 transition-colors"
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-blue-50 text-[#0066CC] rounded-xl font-bold hover:bg-blue-100 transition-colors border border-blue-100"
                     >
                         <Navigation size={18} className={loading ? "animate-spin" : ""} />
                         {loading ? "Localisation..." : "Ma position actuelle"}
@@ -159,42 +226,47 @@ const DistributorsPage: React.FC = () => {
                     {DISTRIBUTORS.map(dist => (
                         <div
                             key={dist.id}
-                            onClick={() => setSelectedDistributor(dist)}
+                            onClick={() => {
+                                setSelectedDistributor(dist);
+                                if (dist.id !== selectedDistributor?.id) setIsNavigating(false);
+                            }}
                             className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedDistributor?.id === dist.id
-                                    ? 'border-[#0066CC] bg-blue-50 shadow-md transform scale-[1.02]'
+                                    ? 'border-[#0066CC] bg-blue-50 shadow-md ring-1 ring-blue-100'
                                     : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <h3 className="font-bold text-slate-900">{dist.name}</h3>
-                                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full">OUVERT</span>
+                                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-1 rounded-full">OUVERT</span>
                             </div>
 
-                            <div className="flex items-start gap-2 text-slate-600 text-sm mb-2">
+                            <div className="flex items-start gap-2 text-slate-600 text-sm mb-3">
                                 <MapPin size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                                <p className="line-clamp-2">{dist.address}</p>
+                                <p className="line-clamp-2 text-xs">{dist.address}</p>
                             </div>
 
-                            <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                                <div className="flex items-center gap-1">
-                                    <Clock size={14} /> {dist.hours}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Phone size={14} /> {dist.phone}
-                                </div>
+                            <div className="flex items-center gap-4 text-xs font-medium text-slate-500 pt-2 border-t border-slate-200/50">
+                                <div className="flex items-center gap-1"><Clock size={12} /> {dist.hours}</div>
+                                <div className="flex items-center gap-1"><Phone size={12} /> {dist.phone}</div>
                             </div>
 
-                            {selectedDistributor?.id === dist.id && (
+                            {selectedDistributor?.id === dist.id && !isNavigating && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        openItinerary(dist.lat, dist.lng);
+                                        startNavigation();
                                     }}
-                                    className="mt-4 w-full py-3 bg-[#0066CC] text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-300"
+                                    className="mt-4 w-full py-3 bg-[#0066CC] text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Navigation size={18} />
-                                    Commencer l'itinéraire
+                                    Y aller maintenant
                                 </button>
+                            )}
+
+                            {selectedDistributor?.id === dist.id && isNavigating && (
+                                <div className="mt-4 text-center text-sm font-bold text-[#0066CC] animate-pulse">
+                                    Itinéraire en cours...
+                                </div>
                             )}
                         </div>
                     ))}
@@ -206,59 +278,70 @@ const DistributorsPage: React.FC = () => {
                 {typeof window !== 'undefined' && userLocation ? (
                     <MapContainer
                         center={[userLocation.lat, userLocation.lng]}
-                        zoom={13}
+                        zoom={14}
                         style={{ height: '100%', width: '100%' }}
                         zoomControl={false}
                     >
+                        {/* Tuiles CartoDB Positron pour style épuré */}
                         <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         />
 
-                        {/* User Marker */}
+                        {isNavigating && selectedDistributor && (
+                            <RoutingControl start={userLocation} end={selectedDistributor} />
+                        )}
+
                         <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
                             <Popup>Vous êtes ici</Popup>
                         </Marker>
 
-                        {/* Distributors Markers */}
                         {DISTRIBUTORS.map(dist => (
                             <Marker
                                 key={dist.id}
                                 position={[dist.lat, dist.lng]}
                                 icon={distributorIcon}
                                 eventHandlers={{
-                                    click: () => setSelectedDistributor(dist),
+                                    click: () => {
+                                        setSelectedDistributor(dist);
+                                        setIsNavigating(false);
+                                    },
                                 }}
                             >
                                 <Popup>
-                                    <div className="p-2">
-                                        <h3 className="font-bold">{dist.name}</h3>
-                                        <p className="text-xs text-slate-500">{dist.address}</p>
+                                    <div className="p-1">
+                                        <h3 className="font-bold text-sm">{dist.name}</h3>
+                                        <p className="text-xs text-slate-500 mb-2">{dist.address}</p>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedDistributor(dist);
+                                                startNavigation();
+                                            }}
+                                            className="w-full bg-[#0066CC] text-white text-xs py-1 px-2 rounded font-bold"
+                                        >
+                                            Y aller
+                                        </button>
                                     </div>
                                 </Popup>
                             </Marker>
                         ))}
 
-                        {/* Auto-center on selected item */}
-                        {selectedDistributor && (
+                        {selectedDistributor && !isNavigating && (
                             <RecenterMap lat={selectedDistributor.lat} lng={selectedDistributor.lng} />
                         )}
                     </MapContainer>
                 ) : (
-                    <div className="h-full flex items-center justify-center bg-slate-100 text-slate-400">
-                        <div className="flex flex-col items-center">
-                            <div className="animate-spin mb-4">
-                                <Navigation size={32} className="text-[#0066CC]" />
-                            </div>
-                            <p>Chargement de la carte...</p>
+                    <div className="h-full flex items-center justify-center bg-slate-50">
+                        <div className="flex flex-col items-center animate-pulse">
+                            <Navigation size={32} className="text-[#0066CC] mb-4" />
+                            <p className="text-slate-400 font-medium">Chargement de la carte...</p>
                         </div>
                     </div>
                 )}
 
                 {error && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-bold shadow-lg flex items-center gap-2">
-                        <Search size={16} />
-                        {error}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white text-red-600 px-4 py-2 rounded-full text-xs font-bold shadow-lg border border-red-100 flex items-center gap-2">
+                        <Search size={14} /> {error}
                     </div>
                 )}
             </div>
