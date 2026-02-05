@@ -22,6 +22,12 @@ const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
 
   useEffect(() => {
+    // Check URL for admin access query param (?admin=true)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true') {
+      setIsAdminMode(true);
+    }
+
     const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
@@ -144,18 +150,6 @@ const App: React.FC = () => {
                     <span className="font-bold text-slate-700">Informations Personnelles</span>
                   </div>
                   <Clock size={16} className="text-slate-300" />
-                </button>
-                <button
-                  onClick={() => setIsAdminMode(true)}
-                  className="flex items-center justify-between p-6 bg-slate-900 rounded-2xl hover:bg-slate-800 transition-colors shadow-lg group">
-                  <div className="flex items-center gap-4">
-                    <Shield className="text-white group-hover:rotate-12 transition-transform" />
-                    <div className="text-left">
-                      <span className="block font-bold text-white">Espace Employé</span>
-                      <span className="text-xs text-slate-400">Accès au Dashboard</span>
-                    </div>
-                  </div>
-                  <ArrowUpRight size={16} className="text-slate-400" />
                 </button>
                 <button
                   onClick={() => alert('Fonctionnalité: Gérer vos préférences de livraison\n\nAdresse, Horaires, Instructions spéciales')}
