@@ -217,9 +217,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#FFFFFF]">
+    <div className="relative flex min-h-screen">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-28 -left-24 h-72 w-72 rounded-full bg-cyan-300/30 blur-3xl" />
+        <div className="absolute top-24 right-[-70px] h-80 w-80 rounded-full bg-blue-300/35 blur-3xl" />
+        <div className="absolute bottom-[-100px] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-sky-200/30 blur-3xl" />
+      </div>
       {currentPage === 'profil' && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="relative flex-1 flex flex-col min-w-0">
         <NavBar
           cartCount={cart.length}
           onToggleMenu={() => setIsMenuOpen(!isMenuOpen)}
@@ -229,8 +234,8 @@ const App: React.FC = () => {
 
         {/* Menu mobile */}
         {isMenuOpen && (
-          <div className="fixed inset-0 z-[100] bg-black/40 flex lg:hidden" onClick={() => setIsMenuOpen(false)}>
-            <div className="bg-white w-64 h-full shadow-xl p-6 flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[100] bg-[#051325]/45 backdrop-blur-sm flex lg:hidden" onClick={() => setIsMenuOpen(false)}>
+            <div className="bg-white/95 backdrop-blur-xl w-64 h-full shadow-2xl p-6 flex flex-col border-r border-white/70" onClick={e => e.stopPropagation()}>
               <button className="self-end mb-6 text-slate-400 hover:text-[#0066CC]" onClick={() => setIsMenuOpen(false)}>
                 ✕
               </button>
@@ -249,16 +254,16 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-1 p-6 lg:p-12 max-w-[1400px] mx-auto w-full">
+        <main className="relative z-10 flex-1 p-6 lg:p-12 max-w-[1400px] mx-auto w-full">
           {renderContent()}
         </main>
 
-        <footer className="mt-auto py-12 px-6 lg:px-12 border-t border-slate-100 bg-gradient-to-br from-slate-50 to-white">
+        <footer className="mt-auto py-12 px-6 lg:px-12 border-t border-white/60 bg-gradient-to-br from-white/75 via-white/60 to-[#eaf3ff]/70 backdrop-blur-xl">
           <div className="max-w-[1400px] mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
               {/* Company Info */}
               <div>
-                <h3 className="text-lg font-black text-slate-900 mb-4">{COMPANY_INFO.name}</h3>
+                <h3 className="text-2xl font-semibold text-slate-900 mb-4">{COMPANY_INFO.name}</h3>
                 <p className="text-slate-600 text-sm mb-4">{COMPANY_INFO.fullName}</p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
@@ -314,6 +319,16 @@ const App: React.FC = () => {
                 <a href="#" className="hover:text-[#0066CC] transition-colors">Conditions</a>
                 <a href="#" className="hover:text-[#0066CC] transition-colors">Aide</a>
               </div>
+            </div>
+
+            <div className="mt-8 relative overflow-hidden rounded-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#021833]/50 via-transparent to-[#021833]/45 pointer-events-none" />
+              <img
+                src="/page.jpeg"
+                alt="Banniere de bas de page"
+                className="w-full h-auto border border-slate-200"
+                loading="lazy"
+              />
             </div>
           </div>
         </footer>

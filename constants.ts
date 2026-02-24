@@ -23,8 +23,8 @@ export const MOCK_USER = {
 };
 
 export const COMPANY_INFO = {
-  name: 'Maji Safi Ya Kuetu',
-  fullName: 'Maji Safi Ya Kuetu R.D.C (M.S.K. R.D.C)',
+  name: 'Maji Safi Ya Kwetu',
+  fullName: 'Maji Safi Ya Kwetu R.D.C (M.S.K. R.D.C)',
   address: 'Avenue Ma Campagne, Ville de Bunia / Ituri R.D.C',
   email: 'majisafi-rdc@gmail.com',
   phone: '+243860089360',

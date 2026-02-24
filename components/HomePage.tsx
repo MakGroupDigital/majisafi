@@ -8,32 +8,33 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) => {
   return (
-    <div className="space-y-16">
+    <div className="space-y-20">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-[#0066CC] via-[#2C5282] to-slate-900 rounded-3xl p-12 md:p-16 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 blur-[100px] rounded-full"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 blur-[100px] rounded-full"></div>
+      <div className="bg-gradient-to-br from-[#024ca8] via-[#046bbf] to-[#0b1f3a] rounded-[2rem] p-10 md:p-14 text-white relative overflow-hidden border border-white/20 shadow-[0_30px_80px_-40px_rgba(3,20,48,0.9)]">
+        <div className="absolute top-0 right-0 w-[28rem] h-[28rem] bg-cyan-200/15 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 w-[26rem] h-[26rem] bg-blue-100/10 blur-[120px] rounded-full"></div>
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '22px 22px' }}></div>
         <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-7">
             <div className="relative w-20 h-20 flex-shrink-0">
-              <div className="absolute inset-0 bg-white/10 rounded-full blur-lg"></div>
+              <div className="absolute inset-0 bg-white/20 rounded-full blur-lg"></div>
               <img 
                 src="/Logo.jpeg" 
                 alt="Maji Safi" 
-                className="relative w-full h-full object-cover rounded-full border-4 border-white/30 shadow-lg"
+                className="relative w-full h-full object-cover rounded-full border-4 border-white/35 shadow-lg"
               />
             </div>
             <div>
-              <h1 className="text-5xl md:text-6xl font-black">Eau Pure & Saine</h1>
-              <p className="text-blue-200 text-sm">Maji Safi Ya Kuetu</p>
+              <h1 className="text-5xl md:text-6xl font-bold leading-[0.95]">Eau Pure & Saine</h1>
+              <p className="text-cyan-100 text-sm tracking-[0.2em] uppercase">Maji Safi Ya Kwetu</p>
             </div>
           </div>
-          <p className="text-xl text-blue-100 mb-8">
-            Maji Safi Ya Kuetu vous apporte l'eau la plus pure directement de notre usine à votre porte. Chaque goutte est garantie 100% saine et certifiée.
+          <p className="text-xl text-blue-50/95 mb-9 leading-relaxed">
+            Maji Safi Ya Kwetu vous apporte l'eau la plus pure directement de notre usine à votre porte. Chaque goutte est garantie 100% saine et certifiée.
           </p>
           <button
             onClick={onOrderClick}
-            className="bg-white text-[#0066CC] font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
+            className="bg-white text-[#0155b4] font-bold px-8 py-4 rounded-full hover:bg-cyan-50 transition-all shadow-xl hover:-translate-y-0.5"
           >
             Commander maintenant
           </button>
@@ -48,7 +49,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
           { icon: ShieldCheck, label: 'Indice Pureté', value: '100% Pur', color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { icon: Clock, label: 'Service Client', value: '24h/24', color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+          <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-white shadow-[0_12px_30px_-20px_rgba(13,41,76,0.5)] hover:shadow-[0_18px_35px_-20px_rgba(13,41,76,0.55)] transition-all group">
             <div className={`${stat.bg} ${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform`}>
               <stat.icon size={24} />
             </div>
@@ -57,6 +58,21 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
           </div>
         ))}
       </div>
+
+      {/* Section Publicite */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-white to-[#e9f4ff] rounded-3xl border border-white p-6 md:p-8 shadow-[0_18px_35px_-24px_rgba(13,41,76,0.55)]">
+        <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-cyan-200/25 blur-3xl" />
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900">Publicite</h2>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#0066CC] bg-white px-3 py-1 rounded-full border border-blue-100">Pub 1</span>
+        </div>
+        <img
+          src="/pub1.jpeg"
+          alt="Publicite Maji Safi"
+          className="w-full h-auto rounded-2xl border border-white shadow-lg"
+          loading="lazy"
+        />
+      </section>
 
       {/* Notre Usine Section */}
       <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-lg">
@@ -74,7 +90,7 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
               <h2 className="text-4xl font-black text-slate-900">Notre Usine d'Eau</h2>
             </div>
             <p className="text-slate-600 text-lg mb-6 leading-relaxed">
-              Maji Safi Ya Kuetu dispose d'une usine de traitement d'eau ultramoderne équipée des dernières technologies de filtration et de purification. Notre processus en 7 étapes garantit une eau cristalline, saine et délicieuse.
+              Maji Safi Ya Kwetu dispose d'une usine de traitement d'eau ultramoderne équipée des dernières technologies de filtration et de purification. Notre processus en 7 étapes garantit une eau cristalline, saine et délicieuse.
             </p>
             <div className="space-y-4">
               <div className="flex gap-4">
@@ -217,15 +233,15 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
       </div>
 
       {/* Programme de Recyclage */}
-      <div className="bg-gradient-to-br from-[#0066CC] to-slate-950 rounded-[40px] p-12 text-center relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#025fc5] via-[#0d4f94] to-slate-950 rounded-[40px] p-12 text-center relative overflow-hidden border border-white/15 shadow-[0_28px_70px_-38px_rgba(3,20,48,0.95)]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[100px] rounded-full"></div>
-        <h3 className="text-white text-3xl font-serif mb-4 relative z-10" style={{ fontFamily: 'Helvetica Bold, Arial Bold, sans-serif' }}>Programme de Recyclage</h3>
-        <p className="text-blue-100 max-w-xl mx-auto mb-8 relative z-10 font-light">
+        <h3 className="text-white text-4xl font-serif mb-4 relative z-10">Programme de Recyclage</h3>
+        <p className="text-blue-100 max-w-xl mx-auto mb-8 relative z-10 font-normal leading-relaxed">
           Rendez 10 bouteilles vides de 10L et recevez votre prochaine livraison gratuitement. Ensemble pour une ville propre.
         </p>
         <button 
           onClick={onRecyclingClick}
-          className="bg-white text-blue-900 font-bold px-10 py-4 rounded-full shadow-xl hover:bg-blue-50 transition-colors relative z-10">
+          className="bg-white text-blue-900 font-bold px-10 py-4 rounded-full shadow-xl hover:bg-blue-50 transition-all hover:-translate-y-0.5 relative z-10">
           En savoir plus
         </button>
       </div>

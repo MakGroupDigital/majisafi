@@ -110,7 +110,7 @@ const Receipt: React.FC<ReceiptProps> = ({
         <div className="grid grid-cols-2 gap-8 mb-8 pb-6 border-b border-slate-200">
           <div>
             <p className="text-xs font-bold text-slate-600 uppercase mb-2">Entreprise</p>
-            <p className="font-semibold text-slate-900">Maji Safi Ya Kuetu</p>
+            <p className="font-semibold text-slate-900">Maji Safi Ya Kwetu</p>
             <p className="text-sm text-slate-600">Kinshasa, RDC</p>
             <p className="text-sm text-slate-600">+243 97 123 4567</p>
             <p className="text-sm text-slate-600">contact@majisafi.cd</p>
@@ -212,7 +212,7 @@ const Receipt: React.FC<ReceiptProps> = ({
         {/* Footer */}
         <div className="text-center space-y-4">
           <p className="text-xs text-slate-500">
-            Merci d'avoir choisi Maji Safi Ya Kuetu pour votre eau pure et saine.
+            Merci d'avoir choisi Maji Safi Ya Kwetu pour votre eau pure et saine.
           </p>
 
           {/* QR Code and Barcode */}
@@ -260,7 +260,7 @@ const Receipt: React.FC<ReceiptProps> = ({
           </div>
 
           <p className="text-xs text-slate-400 pt-4">
-            © 2026 Maji Safi Ya Kuetu. Tous droits réservés.
+            © 2026 Maji Safi Ya Kwetu. Tous droits réservés.
           </p>
         </div>
       </div>

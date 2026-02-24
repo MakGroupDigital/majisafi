@@ -32,7 +32,7 @@ const RecyclingProgram: React.FC<RecyclingProgramProps> = ({ onClose, onStartRec
           </div>
           <div>
             <h1 className="text-4xl font-black text-slate-900">Programme de Recyclage</h1>
-            <p className="text-slate-600">Maji Safi Ya Kuetu - Ensemble pour une ville plus propre</p>
+            <p className="text-slate-600">Maji Safi Ya Kwetu - Ensemble pour une ville plus propre</p>
           </div>
         </div>
       </div>

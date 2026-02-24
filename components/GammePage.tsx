@@ -69,7 +69,7 @@ const GammePage: React.FC<GammePageProps> = ({ cart, setCart }) => {
             </div>
             <div>
               <h1 className="text-4xl md:text-5xl font-black">Notre Gamme Complète</h1>
-              <p className="text-blue-200 text-sm">Maji Safi Ya Kuetu</p>
+              <p className="text-blue-200 text-sm">Maji Safi Ya Kwetu</p>
             </div>
           </div>
           <p className="text-lg text-blue-100 max-w-2xl">

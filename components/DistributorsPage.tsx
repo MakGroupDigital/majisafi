@@ -211,7 +211,7 @@ const DistributorsPage: React.FC = () => {
                             </button>
                         )}
                     </div>
-                    <p className="text-slate-500 text-sm mb-4">Maji Safi Ya Kuetu - Points Relais</p>
+                    <p className="text-slate-500 text-sm mb-4">Maji Safi Ya Kwetu - Points Relais</p>
 
                     <button
                         onClick={handleLocateMe}
