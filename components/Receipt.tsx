@@ -1,7 +1,10 @@
 import React, { useRef } from 'react';
 import { Download, Printer } from 'lucide-react';
+import * as QRCodeLib from 'qrcode.react';
 import { CartItem } from '../types';
 import { BRAND_COLORS } from '../constants';
+
+const QRCode = (QRCodeLib as any).default || QRCodeLib;
 
 interface ReceiptProps {
   orderNumber: string;
@@ -219,43 +222,17 @@ const Receipt: React.FC<ReceiptProps> = ({
           <div className="flex justify-center gap-8 py-6 border-t border-slate-200">
             {/* QR Code */}
             <div className="flex flex-col items-center">
-              <div className="w-24 h-24 bg-slate-100 rounded border-2 border-slate-300 flex items-center justify-center mb-2">
-                <svg
-                  viewBox="0 0 100 100"
-                  className="w-20 h-20"
-                  fill={BRAND_COLORS.sourceBlue}
-                >
-                  <rect x="10" y="10" width="30" height="30" />
-                  <rect x="60" y="10" width="30" height="30" />
-                  <rect x="10" y="60" width="30" height="30" />
-                  <rect x="25" y="25" width="10" height="10" fill="white" />
-                  <rect x="75" y="25" width="10" height="10" fill="white" />
-                  <rect x="25" y="75" width="10" height="10" fill="white" />
-                  <rect x="45" y="45" width="10" height="10" />
-                  <rect x="60" y="45" width="10" height="10" />
-                  <rect x="45" y="60" width="10" height="10" />
-                </svg>
+              <div className="bg-white p-2 rounded border-2 border-slate-200 mb-2">
+                <QRCode
+                  value={`ORD:${orderNumber}|TOTAL:${total}|DATE:${new Date().toISOString()}`}
+                  size={120}
+                  level="H"
+                  includeMargin={true}
+                  fgColor={BRAND_COLORS.sourceBlue}
+                  bgColor="#ffffff"
+                />
               </div>
-              <p className="text-xs text-slate-500">QR Code</p>
-            </div>
-
-            {/* Barcode */}
-            <div className="flex flex-col items-center">
-              <div className="w-24 h-12 bg-slate-100 rounded border-2 border-slate-300 flex items-center justify-center mb-2">
-                <svg viewBox="0 0 100 40" className="w-20 h-10">
-                  {[...Array(20)].map((_, i) => (
-                    <rect
-                      key={i}
-                      x={i * 5}
-                      y="5"
-                      width={Math.random() > 0.5 ? 3 : 2}
-                      height="30"
-                      fill={BRAND_COLORS.sourceBlue}
-                    />
-                  ))}
-                </svg>
-              </div>
-              <p className="text-xs text-slate-500">{orderNumber}</p>
+              <p className="text-xs text-slate-500 font-mono">{orderNumber}</p>
             </div>
           </div>
 

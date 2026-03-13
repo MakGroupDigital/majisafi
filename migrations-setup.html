@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maji Safi Ya Kwetu - Database Migrations</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .header p {
+      color: #666;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .info-box {
+      background: #f0f9ff;
+      border-left: 4px solid #0ea5e9;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    
+    .info-box strong {
+      color: #0369a1;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-primary {
+      background: #0ea5e9;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #0284c7;
+      transform: translateY(-2px);
+    }
+    
+    .migrations {
+      display: grid;
+      gap: 20px;
+    }
+    
+    .migration-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .migration-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .migration-number {
+      background: #667eea;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    
+    .migration-header h3 {
+      margin: 0;
+      color: #333;
+      font-size: 18px;
+      flex: 1;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    
+    .copy-btn {
+      padding: 8px 15px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    
+    .copy-btn:hover {
+      background: #059669;
+    }
+    
+    .copy-btn.copied {
+      background: #8b5cf6;
+    }
+    
+    .migration-details {
+      cursor: pointer;
+    }
+    
+    .migration-details summary {
+      color: #667eea;
+      font-weight: 600;
+      padding: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .migration-details summary:hover {
+      color: #764ba2;
+    }
+    
+    .migration-details pre {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    }
+    
+    .steps {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .steps h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+    
+    .steps ol {
+      list-style: decimal;
+      margin-left: 20px;
+      line-height: 2;
+      color: #555;
+    }
+    
+    .steps li {
+      margin-bottom: 10px;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 6px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      animation: slideIn 0.3s ease;
+      z-index: 1000;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        padding: 20px;
+      }
+      
+      .header h1 {
+        font-size: 24px;
+      }
+      
+      .migration-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .copy-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🌊 Maji Safi Ya Kwetu - Database Setup</h1>
+      <p>Execute these SQL migrations to set up your Supabase database. Copy each migration and run it in your Supabase SQL Editor.</p>
+      
+      <div class="info-box">
+        <strong>📌 Project URL:</strong> https://biddiqgmwrdhozksietf.supabase.co
+      </div>
+      
+      <div class="action-buttons">
+        <a href="https://biddiqgmwrdhozksietf.supabase.co/project/_/sql" target="_blank" class="btn btn-primary">
+          🔗 Open Supabase SQL Editor
+        </a>
+      </div>
+    </div>
+    
+    <div class="migrations">
+      
+      <div class="migration-card">
+        <div class="migration-header">
+          <span class="migration-number">1</span>
+          <h3>001_create_initial_schema.sql</h3>
+          <button class="copy-btn" onclick="copySQL('001_create_initial_schema.sql', `-- Create clients table
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(20),
+  address TEXT,
+  client_type VARCHAR(50) NOT NULL CHECK (client_type IN ('individual', 'business', 'distributor')),
+  total_orders INT DEFAULT 0,
+  total_spent DECIMAL(12, 2) DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create depots table
+CREATE TABLE IF NOT EXISTS depots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  location TEXT NOT NULL,
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  manager VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create stock_items table
+CREATE TABLE IF NOT EXISTS stock_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  depot_id UUID NOT NULL REFERENCES depots(id) ON DELETE CASCADE,
+  product_name VARCHAR(255) NOT NULL,
+  brand VARCHAR(255),
+  size VARCHAR(10),
+  milliliters INT,
+  quantity INT NOT NULL DEFAULT 0,
+  quantity_per_package INT,
+  barcode_id VARCHAR(255) UNIQUE,
+  price_per_unit DECIMAL(10, 2) NOT NULL,
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create sales table
+CREATE TABLE IF NOT EXISTS sales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  depot_id UUID NOT NULL REFERENCES depots(id) ON DELETE CASCADE,
+  client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
+  date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  total DECIMAL(12, 2) NOT NULL,
+  payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('cash', 'card', 'mobile', 'check')),
+  status VARCHAR(50) NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'cancelled')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create sale_items table
+CREATE TABLE IF NOT EXISTS sale_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sale_id UUID NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  total DECIMAL(12, 2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  role VARCHAR(50) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'manager')),
+  depot_id UUID REFERENCES depots(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_clients_email ON clients(email);
+CREATE INDEX IF NOT EXISTS idx_stock_depot ON stock_items(depot_id);
+CREATE INDEX IF NOT EXISTS idx_stock_barcode ON stock_items(barcode_id);
+CREATE INDEX IF NOT EXISTS idx_sales_depot ON sales(depot_id);
+CREATE INDEX IF NOT EXISTS idx_sales_client ON sales(client_id);
+CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
+CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_depot ON users(depot_id);
+`)">
+            📋 Copy SQL
+          </button>
+        </div>
+        <details class="migration-details">
+          <summary>Preview SQL</summary>
+          <pre><code>-- Create clients table
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(20),
+  address TEXT,
+  client_type VARCHAR(50) NOT NULL CHECK (client_type IN ('individual', 'business', 'distributor')),
+  total_orders INT DEFAULT 0,
+  total_spent DECIMAL(12, 2) DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create depots table
+CREATE TABLE IF NOT EXISTS depots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  location TEXT NOT NULL,
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  manager VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create stock_items table
+CREATE TABLE IF NOT EXISTS stock_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  depot_id UUID NOT NULL REFERENCES depots(id) ON DELETE CASCADE,
+  product_name VARCHAR(255) NOT NULL,
+  brand VARCHAR(255),
+  size VARCHAR(10),
+  milliliters INT,
+  quantity INT NOT NULL DEFAULT 0,
+  quantity_per_package INT,
+  barcode_id VARCHAR(255) UNIQUE,
+  price_per_unit DECIMAL(10, 2) NOT NULL,
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create sales table
+CREATE TABLE IF NOT EXISTS sales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  depot_id UUID NOT NULL REFERENCES depots(id) ON DELETE CASCADE,
+  client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
+  date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  total DECIMAL(12, 2) NOT NULL,
+  payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('cash', 'card', 'mobile', 'check')),
+  status VARCHAR(50) NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'cancelled')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create sale_items table
+CREATE TABLE IF NOT EXISTS sale_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sale_id UUID NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  total DECIMAL(12, 2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  role VARCHAR(50) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'manager')),
+  depot_id UUID REFERENCES depots(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_clients_email ON clients(email);
+CREATE INDEX IF NOT EXISTS idx_stock_depot ON stock_items(depot_id);
+CREATE INDEX IF NOT EXISTS idx_stock_barcode ON stock_items(barcode_id);
+CREATE INDEX IF NOT EXISTS idx_sales_depot ON sales(depot_id);
+CREATE INDEX IF NOT EXISTS idx_sales_client ON sales(client_id);
+CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
+CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_depot ON users(depot_id);
+</code></pre>
+        </details>
+      </div>
+      
+      <div class="migration-card">
+        <div class="migration-header">
+          <span class="migration-number">2</span>
+          <h3>002_enable_rls.sql</h3>
+          <button class="copy-btn" onclick="copySQL('002_enable_rls.sql', `-- Enable Row Level Security
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE depots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Clients RLS - Users can only see themselves
+CREATE POLICY &quot;Clients can view own record&quot;
+  ON clients FOR SELECT
+  USING (auth.uid()::text = id::text OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Admins can view all clients&quot;
+  ON clients FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Clients can update own record&quot;
+  ON clients FOR UPDATE
+  USING (auth.uid()::text = id::text);
+
+-- Depots RLS - Managers can only see their depot
+CREATE POLICY &quot;Managers can view their depot&quot;
+  ON depots FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role IN ('manager', 'admin')
+    AND users.depot_id = depots.id
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Stock Items RLS - Managers can only see their depot stock
+CREATE POLICY &quot;Managers can view their depot stock&quot;
+  ON stock_items FOR SELECT
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Managers can update their depot stock&quot;
+  ON stock_items FOR UPDATE
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Sales RLS - Users can only see their sales
+CREATE POLICY &quot;Managers can view their depot sales&quot;
+  ON sales FOR SELECT
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Sale Items RLS - Inherited from sales
+CREATE POLICY &quot;Users can view sale items from their sales&quot;
+  ON sale_items FOR SELECT
+  USING (sale_id IN (
+    SELECT sales.id FROM sales 
+    WHERE sales.depot_id IN (
+      SELECT depot_id FROM users WHERE users.id = auth.uid()
+    ) OR EXISTS (
+      SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+    )
+  ));
+
+-- Users RLS - Only admin users table
+CREATE POLICY &quot;Admins can manage users&quot;
+  ON users FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users AS u WHERE u.id = auth.uid() AND u.role = 'admin'
+  ));
+`)">
+            📋 Copy SQL
+          </button>
+        </div>
+        <details class="migration-details">
+          <summary>Preview SQL</summary>
+          <pre><code>-- Enable Row Level Security
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE depots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Clients RLS - Users can only see themselves
+CREATE POLICY &quot;Clients can view own record&quot;
+  ON clients FOR SELECT
+  USING (auth.uid()::text = id::text OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Admins can view all clients&quot;
+  ON clients FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Clients can update own record&quot;
+  ON clients FOR UPDATE
+  USING (auth.uid()::text = id::text);
+
+-- Depots RLS - Managers can only see their depot
+CREATE POLICY &quot;Managers can view their depot&quot;
+  ON depots FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM users 
+    WHERE users.id = auth.uid() 
+    AND users.role IN ('manager', 'admin')
+    AND users.depot_id = depots.id
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Stock Items RLS - Managers can only see their depot stock
+CREATE POLICY &quot;Managers can view their depot stock&quot;
+  ON stock_items FOR SELECT
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+CREATE POLICY &quot;Managers can update their depot stock&quot;
+  ON stock_items FOR UPDATE
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Sales RLS - Users can only see their sales
+CREATE POLICY &quot;Managers can view their depot sales&quot;
+  ON sales FOR SELECT
+  USING (depot_id IN (
+    SELECT depot_id FROM users WHERE users.id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+  ));
+
+-- Sale Items RLS - Inherited from sales
+CREATE POLICY &quot;Users can view sale items from their sales&quot;
+  ON sale_items FOR SELECT
+  USING (sale_id IN (
+    SELECT sales.id FROM sales 
+    WHERE sales.depot_id IN (
+      SELECT depot_id FROM users WHERE users.id = auth.uid()
+    ) OR EXISTS (
+      SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'
+    )
+  ));
+
+-- Users RLS - Only admin users table
+CREATE POLICY &quot;Admins can manage users&quot;
+  ON users FOR ALL
+  USING (EXISTS (
+    SELECT 1 FROM users AS u WHERE u.id = auth.uid() AND u.role = 'admin'
+  ));
+</code></pre>
+        </details>
+      </div>
+      
+      <div class="migration-card">
+        <div class="migration-header">
+          <span class="migration-number">3</span>
+          <h3>003_create_products.sql</h3>
+          <button class="copy-btn" onclick="copySQL('003_create_products.sql', `-- Create products table
+CREATE TABLE IF NOT EXISTS products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  size VARCHAR(50) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  quantity_per_package INT,
+  type VARCHAR(50) NOT NULL CHECK (type IN ('unite', 'paquet')),
+  image_url TEXT,
+  product_type VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create order_items table (for tracking product sales)
+CREATE TABLE IF NOT EXISTS order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES sales(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  subtotal DECIMAL(12, 2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+CREATE INDEX IF NOT EXISTS idx_products_size ON products(size);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+
+-- Insert seed data for products
+INSERT INTO products (name, size, price, quantity_per_package, type, description, product_type, image_url)
+VALUES
+  ('Eau Pure Maji Safi', '350ml', 500, 24, 'paquet', 'Format individuel - Paquet de 24', 'bottle', '/gamme/350CL.png'),
+  ('Eau Pure Maji Safi', '1L', 1800, 12, 'paquet', 'Portable et pratique - Paquet de 12', 'bottle', '/gamme/1L.png'),
+  ('Eau Pure Maji Safi', '5L', 4500, NULL, 'unite', 'Taille intermédiaire', 'bottle', '/gamme/5L.png'),
+  ('Eau Pure Maji Safi', '7.5L', 1200, 6, 'paquet', 'Paquet économique - Paquet de 6', 'bottle', '/gamme/7500CL.png'),
+  ('Eau Pure Maji Safi', '10L', 8500, NULL, 'unite', 'Parfait pour les familles', 'bottle', '/gamme/10L.png');
+`)">
+            📋 Copy SQL
+          </button>
+        </div>
+        <details class="migration-details">
+          <summary>Preview SQL</summary>
+          <pre><code>-- Create products table
+CREATE TABLE IF NOT EXISTS products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  size VARCHAR(50) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  quantity_per_package INT,
+  type VARCHAR(50) NOT NULL CHECK (type IN ('unite', 'paquet')),
+  image_url TEXT,
+  product_type VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create order_items table (for tracking product sales)
+CREATE TABLE IF NOT EXISTS order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES sales(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  subtotal DECIMAL(12, 2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+CREATE INDEX IF NOT EXISTS idx_products_size ON products(size);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+
+-- Insert seed data for products
+INSERT INTO products (name, size, price, quantity_per_package, type, description, product_type, image_url)
+VALUES
+  ('Eau Pure Maji Safi', '350ml', 500, 24, 'paquet', 'Format individuel - Paquet de 24', 'bottle', '/gamme/350CL.png'),
+  ('Eau Pure Maji Safi', '1L', 1800, 12, 'paquet', 'Portable et pratique - Paquet de 12', 'bottle', '/gamme/1L.png'),
+  ('Eau Pure Maji Safi', '5L', 4500, NULL, 'unite', 'Taille intermédiaire', 'bottle', '/gamme/5L.png'),
+  ('Eau Pure Maji Safi', '7.5L', 1200, 6, 'paquet', 'Paquet économique - Paquet de 6', 'bottle', '/gamme/7500CL.png'),
+  ('Eau Pure Maji Safi', '10L', 8500, NULL, 'unite', 'Parfait pour les familles', 'bottle', '/gamme/10L.png');
+</code></pre>
+        </details>
+      </div>
+      
+      <div class="migration-card">
+        <div class="migration-header">
+          <span class="migration-number">4</span>
+          <h3>004_create_audit_logs.sql</h3>
+          <button class="copy-btn" onclick="copySQL('004_create_audit_logs.sql', `-- Create audit logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  admin_email VARCHAR(255),
+  action_type VARCHAR(50) NOT NULL CHECK (action_type IN ('CREATE', 'READ', 'UPDATE', 'DELETE')),
+  entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('product', 'client', 'depot', 'stock', 'sale', 'sale_item', 'user')),
+  entity_id UUID,
+  entity_name VARCHAR(255),
+  old_values JSONB,
+  new_values JSONB,
+  description TEXT,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for efficient querying
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin ON audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action_type ON audit_logs(action_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON audit_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_action ON audit_logs(admin_id, action_type, created_at DESC);
+
+-- Enable RLS on audit_logs
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can insert audit logs (logged in admins only in practice)
+CREATE POLICY &quot;Admins can insert audit logs&quot; ON audit_logs
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Only admins can view all audit logs via auth_claim
+CREATE POLICY &quot;Admins can view all audit logs&quot; ON audit_logs
+  FOR SELECT
+  USING (auth.jwt() -&gt;&gt; 'role' = 'admin');
+
+-- No one can delete audit logs (immutable)
+CREATE POLICY &quot;No delete on audit logs&quot; ON audit_logs
+  FOR DELETE
+  USING (false);
+
+-- No one can update audit logs (immutable)
+CREATE POLICY &quot;No update on audit logs&quot; ON audit_logs
+  FOR UPDATE
+  USING (false);
+`)">
+            📋 Copy SQL
+          </button>
+        </div>
+        <details class="migration-details">
+          <summary>Preview SQL</summary>
+          <pre><code>-- Create audit logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  admin_email VARCHAR(255),
+  action_type VARCHAR(50) NOT NULL CHECK (action_type IN ('CREATE', 'READ', 'UPDATE', 'DELETE')),
+  entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('product', 'client', 'depot', 'stock', 'sale', 'sale_item', 'user')),
+  entity_id UUID,
+  entity_name VARCHAR(255),
+  old_values JSONB,
+  new_values JSONB,
+  description TEXT,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for efficient querying
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin ON audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action_type ON audit_logs(action_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON audit_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_action ON audit_logs(admin_id, action_type, created_at DESC);
+
+-- Enable RLS on audit_logs
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can insert audit logs (logged in admins only in practice)
+CREATE POLICY &quot;Admins can insert audit logs&quot; ON audit_logs
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Only admins can view all audit logs via auth_claim
+CREATE POLICY &quot;Admins can view all audit logs&quot; ON audit_logs
+  FOR SELECT
+  USING (auth.jwt() -&gt;&gt; 'role' = 'admin');
+
+-- No one can delete audit logs (immutable)
+CREATE POLICY &quot;No delete on audit logs&quot; ON audit_logs
+  FOR DELETE
+  USING (false);
+
+-- No one can update audit logs (immutable)
+CREATE POLICY &quot;No update on audit logs&quot; ON audit_logs
+  FOR UPDATE
+  USING (false);
+</code></pre>
+        </details>
+      </div>
+      
+    </div>
+    
+    <div class="steps">
+      <h2>📋 How to Execute Migrations:</h2>
+      <ol>
+        <li>Click the "Copy SQL" button on each migration card above</li>
+        <li>Click the <strong>"Open Supabase SQL Editor"</strong> button above</li>
+        <li>Create a new query (click "New query")</li>
+        <li>Paste the SQL code into the editor</li>
+        <li>Click the <strong>"Execute"</strong> button</li>
+        <li>Repeat for each migration in order (001, 002, 003, ...)</li>
+        <li>Once all migrations are executed, refresh your app</li>
+      </ol>
+    </div>
+  </div>
+  
+  <script>
+    function copySQL(name, content) {
+      navigator.clipboard.writeText(content).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        btn.classList.add('copied');
+        
+        showToast('SQL copied to clipboard!');
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        showToast('Failed to copy SQL', 'error');
+        console.error('Copy failed:', err);
+      });
+    }
+    
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

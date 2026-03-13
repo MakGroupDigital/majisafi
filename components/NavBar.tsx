@@ -9,9 +9,10 @@ interface NavBarProps {
   onToggleMenu: () => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  onAdminAccess?: () => void; // Nouveau prop pour accès admin
 }
 
-const NavBar: React.FC<NavBarProps> = ({ cartCount, onToggleMenu, currentPage, setCurrentPage }) => {
+const NavBar: React.FC<NavBarProps> = ({ cartCount, onToggleMenu, currentPage, setCurrentPage, onAdminAccess }) => {
   const navItems = [
     { label: 'Accueil', id: 'accueil' },
     { label: 'Commander', id: 'commander' },
@@ -65,6 +66,16 @@ const NavBar: React.FC<NavBarProps> = ({ cartCount, onToggleMenu, currentPage, s
             <Bell size={22} />
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#A32626] border-2 border-white rounded-full"></span>
           </button>
+
+          {/* Bouton Admin temporaire */}
+          {onAdminAccess && (
+            <button
+              onClick={onAdminAccess}
+              className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full hover:bg-red-700 transition-colors"
+            >
+              ADMIN
+            </button>
+          )}
 
           <button
             onClick={() => setCurrentPage('panier')}

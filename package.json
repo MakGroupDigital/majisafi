@@ -6,13 +6,27 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "auth:server": "node server/auth-server.js",
+    "dev:full": "concurrently \"npm run auth:server\" \"npm run dev\"",
+    "migrate": "node scripts/migrate.js",
+    "migrate:sql": "node scripts/generate-sql.js",
+    "db:check": "node scripts/check-db.js",
+    "db:setup": "node scripts/run-migrations.js",
+    "fix:rls": "node scripts/fix-rls-auto.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
     "@types/leaflet": "^1.9.21",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "jsqr": "^1.4.0",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.563.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-leaflet": "^5.0.0"
@@ -20,6 +34,9 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

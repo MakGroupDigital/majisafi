@@ -1,22 +1,13 @@
-
-
 import React, { useState } from 'react';
 import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
-import { BOTTLE_PRICES } from '../constants';
+import { useProducts } from '../hooks/useSupabaseData';
 import PaymentModal from './PaymentModal';
-
-const GAMME = [
-  { label: '10L', img: '/gamme/10L.png', type: 'unite' },
-  { label: '7.5L', img: '/gamme/7500CL.png', type: 'paquet', paquet: 6 },
-  { label: '5L', img: '/gamme/5L.png', type: 'unite' },
-  { label: '1L', img: '/gamme/1L.png', type: 'paquet', paquet: 12 },
-  { label: '350CL', img: '/gamme/350CL.png', type: 'paquet', paquet: 24 },
-];
 
 interface CartItem {
   size: string;
   quantity: number;
   pricePerUnit: number;
+  productId: string;
 }
 
 interface GammeSectionProps {
@@ -26,34 +17,90 @@ interface GammeSectionProps {
 
 const MIN_TOTAL = 100000;
 
+// Fonction pour obtenir l'image correspondant à la taille
+const getProductImage = (size: string): string => {
+  const imageMap: { [key: string]: string } = {
+    '1L': '/gamme/1L.png',
+    '5L': '/gamme/5L.png',
+    '10L': '/gamme/10L.png',
+    '350CL': '/gamme/350CL.png',
+    '7500CL': '/gamme/7500CL.png',
+    '25L': '/gamme/10L.png', // Par défaut 10L pour 25L
+  };
+  
+  // Chercher une correspondance exacte ou partielle
+  const normalized = size.trim().toUpperCase().replace(/\s+/g, '');
+  
+  for (const [key, image] of Object.entries(imageMap)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return image;
+    }
+  }
+  
+  // Fallback par défaut
+  return '/gamme/10L.png';
+};
+
 const GammeSection: React.FC<GammeSectionProps> = ({ cart, setCart }) => {
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { products, loading, error } = useProducts();
 
-  const handleIncrement = (label: string) => {
-    setQuantities(q => ({ ...q, [label]: (q[label] || 1) + 1 }));
-  };
-  const handleDecrement = (label: string) => {
-    setQuantities(q => ({ ...q, [label]: Math.max(1, (q[label] || 1) - 1) }));
+  const handleIncrement = (productId: string) => {
+    setQuantities(q => ({ ...q, [productId]: (q[productId] || 1) + 1 }));
   };
 
-  const handleAddToCart = (label: string, type: string, paquet?: number) => {
-    const qty = quantities[label] || 1;
-    const price = BOTTLE_PRICES[label] || 0;
-    let quantity = qty;
-    if (type === 'paquet' && paquet) quantity = qty * paquet;
+  const handleDecrement = (productId: string) => {
+    setQuantities(q => ({ ...q, [productId]: Math.max(1, (q[productId] || 1) - 1) }));
+  };
+
+  const handleAddToCart = (product: any, qty: number) => {
+    const cartItem: CartItem = {
+      size: product.size,
+      quantity: product.type === 'paquet' && product.quantity_per_package ? qty * product.quantity_per_package : qty,
+      pricePerUnit: product.price,
+      productId: product.id,
+    };
+
     // Si déjà dans le panier, on remplace la quantité
     setCart([
-      ...cart.filter(item => item.size !== label),
-      { size: label, quantity, pricePerUnit: price }
+      ...cart.filter(item => item.size !== product.size),
+      cartItem
     ]);
   };
 
-  const handleRemoveFromCart = (label: string) => {
-    setCart(cart.filter(item => item.size !== label));
+  const handleRemoveFromCart = (size: string) => {
+    setCart(cart.filter(item => item.size !== size));
   };
 
   const total = cart.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
+
+  if (loading) {
+    return (
+      <section className="mb-12" id="notre-gamme">
+        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+          Notre gamme de bouteilles
+        </h2>
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin text-blue-600 mb-2">💧</div>
+          <p className="text-gray-600">Chargement des produits...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="mb-12" id="notre-gamme">
+        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+          Notre gamme de bouteilles
+        </h2>
+        <div className="text-center py-12 bg-red-50 rounded-lg border border-red-200">
+          <p className="text-red-600">Erreur lors du chargement des produits: {error}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mb-12" id="notre-gamme">
@@ -61,34 +108,59 @@ const GammeSection: React.FC<GammeSectionProps> = ({ cart, setCart }) => {
         Notre gamme de bouteilles
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-10">
-        {GAMME.map(({ label, img, type, paquet }) => {
-          const inCart = cart.find(item => item.size === label);
+        {products.map((product) => {
+          const inCart = cart.find(item => item.size === product.size);
+          const qty = quantities[product.id] || 1;
+          
           return (
-            <div key={label} className="flex flex-col items-center bg-white rounded-2xl shadow p-6 border border-slate-100">
-              <img src={img} alt={label} className="w-80 h-80 object-contain mb-3" loading="lazy" />
-              <span className="font-bold text-slate-800 text-xl mb-1">{label}</span>
+            <div key={product.id} className="flex flex-col items-center bg-white rounded-2xl shadow p-6 border border-slate-100">
+              <img 
+                src={product.image_url || getProductImage(product.size)} 
+                alt={product.size} 
+                className="w-80 h-80 object-contain mb-3 rounded-lg" 
+                loading="lazy" 
+                onError={(e) => {
+                  e.currentTarget.src = getProductImage(product.size);
+                }}
+              />
+              <span className="font-bold text-slate-800 text-xl mb-1">{product.size}</span>
               <span className="text-xs font-bold text-[#0066CC] mb-2">
-                {type === 'paquet' && paquet ? `Paquet de ${paquet}` : 'À l’unité'}
+                {product.type === 'paquet' && product.quantity_per_package ? `Paquet de ${product.quantity_per_package}` : 'À l\'unité'}
               </span>
               <span className="text-base font-black text-slate-900 mb-2">
-                {type === 'paquet' && paquet
-                  ? `${BOTTLE_PRICES[label] ? BOTTLE_PRICES[label] + ' CDF / paquet' : ''}`
-                  : `${BOTTLE_PRICES[label] ? BOTTLE_PRICES[label] + ' CDF / unité' : ''}`}
+                {product.type === 'paquet' && product.quantity_per_package
+                  ? `${product.price} CDF / paquet`
+                  : `${product.price} CDF / unité`}
               </span>
               <div className="flex items-center gap-2 mb-2">
-                <button onClick={() => handleDecrement(label)} className="w-8 h-8 flex items-center justify-center rounded bg-slate-50 hover:bg-slate-100"><Minus size={18} /></button>
-                <span className="w-8 text-center font-bold">{quantities[label] || 1}</span>
-                <button onClick={() => handleIncrement(label)} className="w-8 h-8 flex items-center justify-center rounded bg-slate-50 hover:bg-slate-100"><Plus size={18} /></button>
+                <button 
+                  onClick={() => handleDecrement(product.id)} 
+                  className="w-8 h-8 flex items-center justify-center rounded bg-slate-50 hover:bg-slate-100"
+                >
+                  <Minus size={18} />
+                </button>
+                <span className="w-8 text-center font-bold">{qty}</span>
+                <button 
+                  onClick={() => handleIncrement(product.id)} 
+                  className="w-8 h-8 flex items-center justify-center rounded bg-slate-50 hover:bg-slate-100"
+                >
+                  <Plus size={18} />
+                </button>
               </div>
               <button
-                onClick={() => handleAddToCart(label, type, paquet)}
+                onClick={() => handleAddToCart(product, qty)}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-white shadow transition-all active:scale-95 ${inCart ? 'bg-green-600' : 'bg-[#0066CC]'}`}
               >
                 <ShoppingCart size={18} />
                 {inCart ? 'Ajouté' : 'Ajouter au panier'}
               </button>
               {inCart && (
-                <button onClick={() => handleRemoveFromCart(label)} className="mt-2 text-xs text-red-500 flex items-center gap-1 hover:underline"><Trash2 size={14} /> Retirer</button>
+                <button 
+                  onClick={() => handleRemoveFromCart(product.size)} 
+                  className="mt-2 text-xs text-red-500 flex items-center gap-1 hover:underline"
+                >
+                  <Trash2 size={14} /> Retirer
+                </button>
               )}
             </div>
           );
@@ -99,39 +171,36 @@ const GammeSection: React.FC<GammeSectionProps> = ({ cart, setCart }) => {
       <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 max-w-2xl mx-auto flex flex-col items-center">
         <h3 className="text-lg font-bold mb-2 text-slate-900">Votre panier</h3>
         {cart.length === 0 ? (
-          <p className="text-slate-400 mb-2">Aucun article sélectionné</p>
+          <p className="text-slate-600 text-sm mb-4">Votre panier est vide</p>
         ) : (
-          <ul className="w-full mb-2">
-            {cart.map(item => (
-              <li key={item.size} className="flex justify-between items-center py-1 text-slate-700">
-                <span>{item.size} <span className="text-xs text-slate-400">x{item.quantity}</span></span>
-                <span className="font-bold">{(item.quantity * item.pricePerUnit).toLocaleString()} CDF</span>
-              </li>
+          <div className="w-full space-y-2 mb-4">
+            {cart.map((item) => (
+              <div key={item.size} className="flex justify-between py-2 border-b border-slate-200">
+                <span className="text-slate-700 font-semibold">{item.size}</span>
+                <span className="text-slate-600 text-sm">{item.quantity} unités × {item.pricePerUnit} CDF</span>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-        <div className="flex justify-between items-center w-full border-t border-slate-200 pt-2 mt-2">
-          <span className="font-bold text-slate-900">Total</span>
-          <span className="font-black text-xl text-[#0066CC]">{total.toLocaleString()} CDF</span>
+        <div className="flex justify-between w-full py-2 border-t-2 border-slate-300 font-bold text-lg mb-4">
+          <span>Total:</span>
+          <span className="text-[#0066CC]">{total.toLocaleString()} CDF</span>
         </div>
-        <button
-          onClick={() => setIsPaymentModalOpen(true)}
-          className={`mt-4 px-8 py-3 rounded-xl font-bold text-white text-lg shadow transition-all ${total >= MIN_TOTAL ? 'bg-[#0066CC] hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'}`}
-          disabled={total < MIN_TOTAL}
-        >
-          Commander
-        </button>
-        {total < MIN_TOTAL && (
-          <p className="text-xs text-red-500 mt-2">Montant minimum de commande : 100 000 CDF</p>
+        {total >= MIN_TOTAL && cart.length > 0 ? (
+          <button
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors"
+          >
+            Procéder au paiement
+          </button>
+        ) : (
+          <button disabled className="w-full bg-slate-400 text-white py-3 rounded-xl font-bold cursor-not-allowed">
+            Montant minimum: {MIN_TOTAL.toLocaleString()} CDF
+          </button>
         )}
       </div>
 
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        cart={cart}
-        total={total}
-      />
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} cart={cart} total={total} />
     </section>
   );
 };

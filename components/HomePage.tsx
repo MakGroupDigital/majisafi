@@ -14,30 +14,40 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
         <div className="absolute top-0 right-0 w-[28rem] h-[28rem] bg-cyan-200/15 blur-[120px] rounded-full"></div>
         <div className="absolute bottom-0 left-0 w-[26rem] h-[26rem] bg-blue-100/10 blur-[120px] rounded-full"></div>
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '22px 22px' }}></div>
-        <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-6 mb-7">
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <div className="absolute inset-0 bg-white/20 rounded-full blur-lg"></div>
-              <img 
-                src="/Logo.jpeg" 
-                alt="Maji Safi" 
-                className="relative w-full h-full object-cover rounded-full border-4 border-white/35 shadow-lg"
-              />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-6 mb-7">
+              <div className="relative w-20 h-20 flex-shrink-0">
+                <div className="absolute inset-0 bg-white/20 rounded-full blur-lg"></div>
+                <img 
+                  src="/Logo.jpeg" 
+                  alt="Maji Safi" 
+                  className="relative w-full h-full object-cover rounded-full border-4 border-white/35 shadow-lg"
+                />
+              </div>
+              <div>
+                <h1 className="text-5xl md:text-6xl font-bold leading-[0.95]">Eau Pure & Saine</h1>
+                <p className="text-cyan-100 text-sm tracking-[0.2em] uppercase">Maji Safi Ya Kwetu</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-5xl md:text-6xl font-bold leading-[0.95]">Eau Pure & Saine</h1>
-              <p className="text-cyan-100 text-sm tracking-[0.2em] uppercase">Maji Safi Ya Kwetu</p>
-            </div>
+            <p className="text-xl text-blue-50/95 mb-9 leading-relaxed">
+              Maji Safi Ya Kwetu vous apporte l'eau la plus pure directement de notre usine à votre porte. Chaque goutte est garantie 100% saine et certifiée.
+            </p>
+            <button
+              onClick={onOrderClick}
+              className="bg-white text-[#0155b4] font-bold px-8 py-4 rounded-full hover:bg-cyan-50 transition-all shadow-xl hover:-translate-y-0.5"
+            >
+              Commander maintenant
+            </button>
           </div>
-          <p className="text-xl text-blue-50/95 mb-9 leading-relaxed">
-            Maji Safi Ya Kwetu vous apporte l'eau la plus pure directement de notre usine à votre porte. Chaque goutte est garantie 100% saine et certifiée.
-          </p>
-          <button
-            onClick={onOrderClick}
-            className="bg-white text-[#0155b4] font-bold px-8 py-4 rounded-full hover:bg-cyan-50 transition-all shadow-xl hover:-translate-y-0.5"
-          >
-            Commander maintenant
-          </button>
+
+          <div className="hidden lg:block">
+            <img
+              src="/pub1.jpeg"
+              alt="Affiche publicitaire Maji Safi"
+              className="w-full h-auto rounded-3xl border border-white/30 shadow-2xl"
+            />
+          </div>
         </div>
       </div>
 
@@ -66,12 +76,14 @@ const HomePage: React.FC<HomePageProps> = ({ onOrderClick, onRecyclingClick }) =
           <h2 className="text-2xl md:text-3xl font-black text-slate-900">Publicite</h2>
           <span className="text-xs font-bold uppercase tracking-widest text-[#0066CC] bg-white px-3 py-1 rounded-full border border-blue-100">Pub 1</span>
         </div>
-        <img
-          src="/pub1.jpeg"
-          alt="Publicite Maji Safi"
-          className="w-full h-auto rounded-2xl border border-white shadow-lg"
-          loading="lazy"
-        />
+        <div className="overflow-hidden rounded-2xl">
+          <img
+            src="/pub1.jpeg"
+            alt="Publicite Maji Safi"
+            className="w-full h-auto max-h-[280px] md:max-h-[380px] object-cover rounded-2xl border border-white shadow-lg"
+            loading="lazy"
+          />
+        </div>
       </section>
 
       {/* Notre Usine Section */}

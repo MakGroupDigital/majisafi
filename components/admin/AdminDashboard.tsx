@@ -1,436 +1,304 @@
-import React, { useState } from 'react';
-import {
-    LayoutDashboard,
-    Package,
-    Users,
-    Truck,
-    Store,
-    BarChart3,
-    Settings,
-    Bell,
-    Search,
-    LogOut,
-    ChevronRight,
-    Plus,
-    ArrowUpRight,
-    ArrowDownRight,
-    Filter,
-    Download,
-    CreditCard,
-    Map,
-    UserCheck,
-    MoreHorizontal
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import DepotRelaisManagement from './DepotRelaisManagement';
+import StockManagement from './StockManagement';
+import SalesManagement from './SalesManagement';
+import ClientManagement from './ClientManagement';
+import ProductsManagement from './ProductsManagement';
+import SecurityAudit from './SecurityAudit';
+import { 
+  DashboardIcon, 
+  DepotIcon, 
+  StockIcon, 
+  SalesIcon, 
+  ClientsIcon, 
+  SettingsIcon, 
+  LogoutIcon, 
+  MenuIcon, 
+  CloseIcon,
+  WarehouseStatsIcon,
+  StockStatsIcon,
+  SalesStatsIcon,
+  ClientsStatsIcon
+} from '../icons/AdminIcons';
+import { DepotRelais, StockItem, Sale, Client } from '../../types';
+import { useDepots, useStock, useSales, useClients, useProducts } from '../../hooks/useSupabaseData';
 
-// --- Types ---
-type AdminView = 'overview' | 'stock' | 'sales' | 'distribution' | 'partners' | 'crm';
+type AdminTab = 'dashboard' | 'depot' | 'stock' | 'ventes' | 'clients' | 'produits' | 'settings';
 
-// --- Components Helpers ---
+interface AdminDashboardProps {
+  onLogout?: () => void;
+}
 
-const StatusBadge = ({ status }: { status: string }) => {
-    const styles: { [key: string]: string } = {
-        'Livré': 'bg-emerald-100 text-emerald-700',
-        'En cours': 'bg-blue-100 text-blue-700',
-        'En attente': 'bg-orange-100 text-orange-700',
-        'Annulé': 'bg-red-100 text-red-700',
-        'Actif': 'bg-emerald-100 text-emerald-700',
-        'Inactif': 'bg-slate-100 text-slate-500',
-        'Premium': 'bg-purple-100 text-purple-700',
-        'Standard': 'bg-slate-100 text-slate-600',
-    };
-    return (
-        <span className={`px-2 py-1 rounded-full text-xs font-bold ${styles[status] || 'bg-slate-100 text-slate-700'}`}>
-            {status}
-        </span>
-    );
-};
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-const Header = ({ title }: { title: string }) => (
-    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-        <div className="flex gap-2">
-            <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="Rechercher..." className="pl-10 pr-4 py-2 bg-slate-50 rounded-lg text-sm border-none focus:ring-2 focus:ring-blue-100 outline-none w-64" />
-            </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200"><Filter size={16} /> Filtres</button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200"><Download size={16} /> Export</button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#0066CC] text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-200"><Plus size={16} /> Nouveau</button>
+  // Récupérer les données depuis Supabase
+  const { depots, loading: depotsLoading, addDepot, updateDepot, deleteDepot } = useDepots();
+  const { stock: stocks, loading: stocksLoading, addStockItem, updateStockItem, deleteStockItem } = useStock();
+  const { sales, loading: salesLoading, addSale, updateSale, deleteSale } = useSales();
+  const { clients, loading: clientsLoading, addClient, updateClient, deleteClient } = useClients();
+  const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct } = useProducts();
+
+  const isLoading = depotsLoading || stocksLoading || salesLoading || clientsLoading || productsLoading;
+
+  // Calculate stats
+  const totalStockValue = stocks.reduce((sum, item) => sum + (item.quantity * item.pricePerUnit), 0);
+  const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalClients = clients.length;
+
+  const handleLogout = () => {
+    if (onLogout) onLogout();
+    else window.location.href = '/?admin=false';
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-slate-500">Chargement...</p>
+          </div>
         </div>
-    </div>
-);
+      );
+    }
 
-// --- MODULES ---
+    switch (activeTab) {
+      case 'depot':
+        return <DepotRelaisManagement />;
+      case 'stock':
+        return <StockManagement stocks={stocks} setStocks={(s) => { stocks.length = 0; stocks.push(...s); }} depots={depots} />;
+      case 'ventes':
+        return <SalesManagement stocks={stocks} setStocks={(s) => { stocks.length = 0; stocks.push(...s); }} />;
+      case 'clients':
+        return <ClientManagement clients={clients} setClients={(c) => { clients.length = 0; clients.push(...c); }} />;
+      case 'produits':
+        return <ProductsManagement products={products} setProducts={(p) => { products.length = 0; products.push(...p); }} />;
+      case 'settings':
+        return <SecurityAudit />;
+      default:
+        return (
+          <div className="space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-900">Tableau de bord Admin</h1>
 
-const OverviewModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-                { label: 'Revenu Journalier', value: '2,450,000 FC', trend: '+12.5%', isPositive: true },
-                { label: 'Commandes en cours', value: '45', trend: '-5%', isPositive: false },
-                { label: 'Stock Usine', value: '85%', trend: 'Stable', isPositive: true },
-                { label: 'Dépôts Actifs', value: '12 / 15', trend: '+2', isPositive: true },
-            ].map((kpi, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">{kpi.label}</p>
-                    <div className="flex items-end justify-between">
-                        <h3 className="text-2xl font-black text-slate-900">{kpi.value}</h3>
-                        <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${kpi.isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                            {kpi.isPositive ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
-                            {kpi.trend}
-                        </div>
-                    </div>
+            {/* Stats Grid - Responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="text-blue-600">
+                    <WarehouseStatsIcon size={24} />
+                  </div>
+                  <span className="text-[10px] md:text-xs font-bold text-blue-600 bg-white px-2 md:px-3 py-1 rounded-full">+12%</span>
                 </div>
-            ))}
-        </div>
+                <p className="text-blue-600 text-xs md:text-sm font-semibold mb-1">Total Dépôts</p>
+                <p className="text-2xl md:text-3xl font-black text-blue-900">{depots.length}</p>
+              </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-bold text-slate-900 flex items-center gap-2"><Package size={20} className="text-orange-500" /> Alertes Stock</h3>
-                    <button className="text-xs font-bold text-[#0066CC]">Voir tout</button>
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="text-emerald-600">
+                    <StockStatsIcon size={24} />
+                  </div>
+                  <span className="text-[10px] md:text-xs font-bold text-emerald-600 bg-white px-2 md:px-3 py-1 rounded-full">+5%</span>
                 </div>
-                <div className="space-y-4">
-                    {[{ item: 'Bouteilles 10L', status: 'Critique', stock: '150 unités', color: 'text-red-600 bg-red-50' }, { item: 'Préformes 1L', status: 'Faible', stock: '5000 unités', color: 'text-orange-600 bg-orange-50' }].map((alert, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-                            <div><p className="font-bold text-slate-900 text-sm">{alert.item}</p><p className="text-xs text-slate-500">Stock: {alert.stock}</p></div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${alert.color}`}>{alert.status}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-bold text-slate-900 flex items-center gap-2"><Truck size={20} className="text-[#0066CC]" /> Derniers Mouvements</h3>
-                    <button className="text-xs font-bold text-[#0066CC]">Détails</button>
-                </div>
-                <div className="space-y-4">
-                    {[{ action: 'Expédition vers Relais Ma Campagne', time: '10 min', amount: '200x 10L' }, { action: 'Vente Directe Usine', time: '25 min', amount: '50x 1L' }].map((move, i) => (
-                        <div key={i} className="flex items-start gap-4 p-3 border-b border-slate-50 last:border-0">
-                            <div className="w-2 h-2 mt-2 rounded-full bg-[#0066CC]"></div>
-                            <div><p className="font-bold text-slate-900 text-sm">{move.action}</p><p className="text-xs text-slate-500">{move.amount}</p></div>
-                            <span className="ml-auto text-xs text-slate-400 font-medium">{move.time}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    </div>
-);
+                <p className="text-emerald-600 text-xs md:text-sm font-semibold mb-1">Valeur Stock</p>
+                <p className="text-2xl md:text-3xl font-black text-emerald-900">{totalStockValue.toLocaleString()} FC</p>
+              </div>
 
-const StockModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <Header title="Inventaire Global" />
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                    <tr><th className="px-6 py-4 rounded-l-xl">Article</th><th className="px-6 py-4">Catégorie</th><th className="px-6 py-4">Stock Usine</th><th className="px-6 py-4">En Transit</th><th className="px-6 py-4">Valeur Est.</th><th className="px-6 py-4 rounded-r-xl">Statut</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                    {[
-                        { name: 'Bouteille 10L (Eau)', cat: 'Produit Fini', stock: 1250, transit: 200, val: '10.6M FC', status: 'Bon' },
-                        { name: 'Bouteille 5L (Eau)', cat: 'Produit Fini', stock: 3400, transit: 150, val: '15.3M FC', status: 'Bon' },
-                        { name: 'Pack 1L x12', cat: 'Produit Fini', stock: 850, transit: 50, val: '8.5M FC', status: 'Moyen' },
-                        { name: 'Préforme 10L', cat: 'Matière Première', stock: 150, transit: 5000, val: '-', status: 'Critique' },
-                    ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-bold text-slate-900">{row.name}</td>
-                            <td className="px-6 py-4 text-slate-500">{row.cat}</td>
-                            <td className="px-6 py-4 font-mono font-medium">{row.stock}</td>
-                            <td className="px-6 py-4 text-slate-400 font-mono">{row.transit}</td>
-                            <td className="px-6 py-4 text-slate-900 font-bold">{row.val}</td>
-                            <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-bold ${row.status === 'Critique' ? 'bg-red-100 text-red-600' : row.status === 'Moyen' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{row.status}</span></td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    </div>
-);
-
-const SalesModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between h-40">
-                <p className="text-slate-500 text-xs font-bold uppercase">Chiffre d'affaire (Mois)</p>
-                <h3 className="text-3xl font-black text-slate-900">45.2M FC</h3>
-                <p className="text-emerald-600 text-xs font-bold flex items-center"><ArrowUpRight size={14} className="mr-1" /> +15% vs mois dernier</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between h-40">
-                <p className="text-slate-500 text-xs font-bold uppercase">Panier Moyen</p>
-                <h3 className="text-3xl font-black text-slate-900">$12.50</h3>
-                <p className="text-emerald-600 text-xs font-bold flex items-center"><ArrowUpRight size={14} className="mr-1" /> +2% vs mois dernier</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between h-40">
-                <p className="text-slate-500 text-xs font-bold uppercase">Commandes Totales</p>
-                <h3 className="text-3xl font-black text-slate-900">1,245</h3>
-                <p className="text-slate-400 text-xs font-bold">Cette période</p>
-            </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <Header title="Dernières Transactions" />
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                    <tr><th className="px-6 py-4 rounded-l-xl">ID Commande</th><th className="px-6 py-4">Client</th><th className="px-6 py-4">Date</th><th className="px-6 py-4">Montant</th><th className="px-6 py-4">Méthode</th><th className="px-6 py-4 rounded-r-xl">Statut</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                    {[
-                        { id: '#CMD-8821', client: 'Relais Ma Campagne', date: 'Aujourd\'hui, 14:30', amount: '250,000 FC', method: 'Virement', status: 'Payé' },
-                        { id: '#CMD-8820', client: 'Jean Dupont (Particulier)', date: 'Aujourd\'hui, 13:15', amount: '45,000 FC', method: 'Mobile Money', status: 'Payé' },
-                        { id: '#CMD-8819', client: 'Hôtel Bunia Palace', date: 'Hier, 18:45', amount: '1,200,000 FC', method: 'Chèque', status: 'En attente' },
-                        { id: '#CMD-8818', client: 'Dépôt Cité Verte', date: 'Hier, 10:00', amount: '350,000 FC', method: 'Cash', status: 'Payé' },
-                    ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-[#0066CC] font-bold">{row.id}</td>
-                            <td className="px-6 py-4 font-bold text-slate-900">{row.client}</td>
-                            <td className="px-6 py-4 text-slate-500">{row.date}</td>
-                            <td className="px-6 py-4 font-black text-slate-900">{row.amount}</td>
-                            <td className="px-6 py-4 text-slate-600">{row.method}</td>
-                            <td className="px-6 py-4">
-                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${row.status === 'Payé' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>{row.status}</span>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    </div>
-);
-
-const DistributionModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Carte simulée */}
-            <div className="lg:col-span-2 bg-slate-200 rounded-2xl h-80 relative overflow-hidden flex items-center justify-center border border-slate-300">
-                <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/ec/Bunia_OSM_Map.png')] bg-cover opacity-50 grayscale"></div>
-                <div className="relative z-10 bg-white/90 backdrop-blur p-4 rounded-xl shadow-lg text-center">
-                    <Map size={32} className="mx-auto text-[#0066CC] mb-2" />
-                    <p className="font-bold text-slate-900">Suivi Flotte en Temps Réel</p>
-                    <p className="text-xs text-slate-500">4 Camions en mouvement</p>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="text-purple-600">
+                    <SalesStatsIcon size={24} />
+                  </div>
+                  <span className="text-[10px] md:text-xs font-bold text-purple-600 bg-white px-2 md:px-3 py-1 rounded-full">+8%</span>
                 </div>
-                {/* Points simulés */}
-                <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
-                <div className="absolute top-1/3 left-1/4 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
-                <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
+                <p className="text-purple-600 text-xs md:text-sm font-semibold mb-1">Total Ventes</p>
+                <p className="text-2xl md:text-3xl font-black text-purple-900">{totalSales.toLocaleString()} FC</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="text-orange-600">
+                    <ClientsStatsIcon size={24} />
+                  </div>
+                  <span className="text-[10px] md:text-xs font-bold text-orange-600 bg-white px-2 md:px-3 py-1 rounded-full">+3%</span>
+                </div>
+                <p className="text-orange-600 text-xs md:text-sm font-semibold mb-1">Total Clients</p>
+                <p className="text-2xl md:text-3xl font-black text-orange-900">{totalClients}</p>
+              </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
-                <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><Truck size={20} className="text-[#0066CC]" /> Flotte Active</h3>
-                <div className="flex-1 space-y-4 overflow-y-auto">
-                    {[
-                        { id: 'TRUCK-01', driver: 'Moussa K.', status: 'En route', dest: 'Ma Campagne', load: '85%' },
-                        { id: 'TRUCK-02', driver: 'Jean P.', status: 'En livraison', dest: 'Centre Ville', load: '45%' },
-                        { id: 'TRUCK-03', driver: 'Michel D.', status: 'Au dépôt', dest: '-', load: '0%' },
-                    ].map((truck, i) => (
-                        <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="font-bold text-slate-900 text-sm">{truck.id}</span>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${truck.status === 'Au dépôt' ? 'bg-slate-200 text-slate-600' : 'bg-blue-100 text-blue-700'}`}>{truck.status}</span>
-                            </div>
-                            <p className="text-xs text-slate-500 mb-1">Chauffeur: <span className="text-slate-700 font-medium">{truck.driver}</span></p>
-                            {truck.dest !== '-' && <p className="text-xs text-slate-500">Vers: {truck.dest}</p>}
-                            {truck.load !== '0%' && (
-                                <div className="w-full h-1.5 bg-slate-200 rounded-full mt-2 overflow-hidden">
-                                    <div className="h-full bg-[#0066CC]" style={{ width: truck.load }}></div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <Header title="Programmation des Livraisons" />
-            <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-xl border-dashed border-2 border-slate-200">
-                <p>Aucune livraison en attente d'assignation</p>
-                <button className="mt-4 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50">Créer une tournée</button>
-            </div>
-        </div>
-    </div>
-);
-
-const PartnersModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-                { kpi: 'Dépôts Total', val: '15' },
-                { kpi: 'Ventes du jour (Réseau)', val: '1.2M FC' },
-                { kpi: 'Stock Déporté', val: '45%' },
-                { kpi: 'Nouveaux (30j)', val: '+2' },
-            ].map((k, i) => (
-                <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
-                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">{k.kpi}</p>
-                    <p className="text-2xl font-black text-slate-900">{k.val}</p>
-                </div>
-            ))}
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <Header title="Gestion des Dépôts Relais" />
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                    <tr><th className="px-6 py-4 rounded-l-xl">Nom du Relais</th><th className="px-6 py-4">Responsable</th><th className="px-6 py-4">Localisation</th><th className="px-6 py-4">Stock Actuel</th><th className="px-6 py-4">Performance</th><th className="px-6 py-4 rounded-r-xl">Action</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                    {[
-                        { name: 'Relais Ma Campagne', resp: 'Mme. Kapinga', loc: 'Ma Campagne', stock: 'Haut', perf: 'A+', id: 1 },
-                        { name: 'Dépôt Cité Verte', resp: 'Mr. Kabuya', loc: 'Cité Verte', stock: 'Moyen', perf: 'B', id: 2 },
-                        { name: 'Kiosque Marché', resp: 'Sarah M.', loc: 'Marché Central', stock: 'Bas', perf: 'A', id: 3 },
-                    ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-2">
-                                <div className="w-8 h-8 rounded bg-blue-100 text-[#0066CC] flex items-center justify-center font-bold text-xs">{row.name.substring(0, 2)}</div>
-                                {row.name}
-                            </td>
-                            <td className="px-6 py-4 text-slate-600">{row.resp}</td>
-                            <td className="px-6 py-4 text-slate-500">{row.loc}</td>
-                            <td className="px-6 py-4"><StatusBadge status={row.stock === 'Haut' ? 'Actif' : row.stock === 'Bas' ? 'En attente' : 'En cours'} /></td>
-                            <td className="px-6 py-4 font-bold text-slate-900">{row.perf}</td>
-                            <td className="px-6 py-4">
-                                <button className="p-2 hover:bg-slate-100 rounded-full transition-colors"><MoreHorizontal size={16} className="text-slate-400" /></button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    </div>
-);
-
-const CRMModule = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <Header title="Base de Données Clients" />
-            <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                    <tr><th className="px-6 py-4 rounded-l-xl">Client</th><th className="px-6 py-4">Email / Tél</th><th className="px-6 py-4">Segment</th><th className="px-6 py-4">Commandes</th><th className="px-6 py-4">Dernière active</th><th className="px-6 py-4 rounded-r-xl">Solde</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                    {[
-                        { name: 'Alex Johnson', contact: 'alex@example.com', segment: 'Premium', orders: 45, last: '2j', solde: '0 FC' },
-                        { name: 'Marie Curie', contact: '+243 81 000 0000', segment: 'Standard', orders: 12, last: '5j', solde: '0 FC' },
-                        { name: 'Hôtel Deluxe', contact: 'appro@hoteldeluxe.cd', segment: 'B2B', orders: 150, last: '1j', solde: '1.5M FC (Facturé)' },
-                    ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
-                                    <img src={`https://ui-avatars.com/api/?name=${row.name}&background=random`} alt={row.name} />
-                                </div>
-                                {row.name}
-                            </td>
-                            <td className="px-6 py-4 text-slate-500 text-xs">{row.contact}</td>
-                            <td className="px-6 py-4"><StatusBadge status={row.segment} /></td>
-                            <td className="px-6 py-4 font-mono text-slate-500">{row.orders}</td>
-                            <td className="px-6 py-4 text-slate-400 text-xs">Il y a {row.last}</td>
-                            <td className="px-6 py-4 font-bold text-slate-700">{row.solde}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    </div>
-);
-
-// --- Main Layout ---
-
-const AdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const [currentView, setCurrentView] = useState<AdminView>('overview');
-
-    const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
-        <button
-            onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-        >
-            <Icon size={20} />
-            <span className="font-medium text-sm">{label}</span>
-            {active && <ChevronRight size={16} className="ml-auto opacity-50" />}
-        </button>
-    );
-
-    return (
-        <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
-
-            {/* Sidebar Admin */}
-            <aside className="w-72 bg-white border-r border-slate-200 flex flex-col fixed h-full z-20 shadow-xl overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="w-8 h-8 bg-[#0066CC] rounded-lg flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-200">MS</div>
-                        <h1 className="font-black text-lg tracking-tight">Maji Safi <span className="text-[#0066CC]">Admin</span></h1>
-                    </div>
-                    <p className="text-xs text-slate-400 pl-11 font-medium">Gestion & Opérations v1.2</p>
-                </div>
-
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                    <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2">Tableaux de Bord</p>
-                    <SidebarItem icon={LayoutDashboard} label="Vue d'ensemble" active={currentView === 'overview'} onClick={() => setCurrentView('overview')} />
-                    <SidebarItem icon={BarChart3} label="Ventes & Finance" active={currentView === 'sales'} onClick={() => setCurrentView('sales')} />
-
-                    <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6">Opérations</p>
-                    <SidebarItem icon={Package} label="Stock & Inventaire" active={currentView === 'stock'} onClick={() => setCurrentView('stock')} />
-                    <SidebarItem icon={Truck} label="Logistique" active={currentView === 'distribution'} onClick={() => setCurrentView('distribution')} />
-                    <SidebarItem icon={Store} label="Dépôts Relais" active={currentView === 'partners'} onClick={() => setCurrentView('partners')} />
-
-                    <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6">Relation</p>
-                    <SidebarItem icon={Users} label="Clients CRM" active={currentView === 'crm'} onClick={() => setCurrentView('crm')} />
-                </nav>
-
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                    <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold text-sm">
-                        <LogOut size={20} />
-                        Déconnexion
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 ml-72 flex flex-col min-w-0 h-full overflow-hidden">
-                {/* Header Admin */}
-                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
+            {/* Recent Sales - Responsive */}
+            <div className="bg-white border border-slate-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+              <h2 className="text-lg md:text-xl font-black text-slate-900 mb-4">Dernières Ventes</h2>
+              <div className="space-y-2 md:space-y-3 max-h-64 overflow-y-auto">
+                {sales.slice(-5).reverse().map((sale) => (
+                  <div key={sale.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 md:p-4 bg-slate-50 rounded-lg border border-slate-100 gap-2 sm:gap-4">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
-                            {currentView === 'overview' ? "Vue d'ensemble" :
-                                currentView === 'stock' ? "Gestion des Stocks" :
-                                    currentView === 'sales' ? "Ventes & Finances" :
-                                        currentView === 'distribution' ? "Logistique & Flotte" :
-                                            currentView === 'partners' ? "Réseau de Dépôts" :
-                                                "Base Clients (CRM)"}
-                        </h2>
-                        <p className="text-slate-400 text-xs font-medium">Dernière synchro: <span className="text-slate-600">À l'instant</span></p>
+                      <p className="font-semibold text-slate-900 text-sm md:text-base">{new Date(sale.date).toLocaleDateString('fr-FR')}</p>
+                      <p className="text-xs md:text-sm text-slate-500">{sale.items.length} article(s)</p>
                     </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-xs font-bold text-emerald-700">Système Opérationnel</span>
-                        </div>
-                        <button className="relative p-2 text-slate-400 hover:text-[#0066CC] transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                        </button>
-                        <div className="flex items-center gap-3 pl-6 border-l border-slate-100">
-                            <div className="text-right hidden md:block">
-                                <p className="text-sm font-bold text-slate-900">Admin Principal</p>
-                                <p className="text-xs text-slate-400">Direction Générale</p>
-                            </div>
-                            <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold shadow-lg">AD</div>
-                        </div>
+                    <div className="text-left sm:text-right">
+                      <p className="font-black text-emerald-600 text-sm md:text-base">{sale.total.toLocaleString()} FC</p>
+                      <p className="text-xs md:text-sm text-slate-500 capitalize">{sale.paymentMethod}</p>
                     </div>
-                </header>
+                  </div>
+                ))}
+                {sales.length === 0 && <p className="text-center text-slate-500 py-6 text-sm md:text-base">Aucune vente enregistrée</p>}
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
-                {/* Dynamic View Content */}
-                <div className="flex-1 p-8 overflow-y-auto bg-slate-50/50 scroll-smooth">
-                    {currentView === 'overview' && <OverviewModule />}
-                    {currentView === 'stock' && <StockModule />}
-                    {currentView === 'sales' && <SalesModule />}
-                    {currentView === 'distribution' && <DistributionModule />}
-                    {currentView === 'partners' && <PartnersModule />}
-                    {currentView === 'crm' && <CRMModule />}
-                </div>
-            </main>
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      {/* Mobile Header with Menu Button */}
+      <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-40">
+        <h1 className="text-xl font-black text-slate-900">Admin Panel</h1>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-700"
+        >
+          {isSidebarOpen ? <CloseIcon size={24} /> : <MenuIcon size={24} />}
+        </button>
+      </div>
+
+      {/* Sidebar - Mobile Overlay & Desktop Fixed */}
+      <div
+        onClick={() => setIsSidebarOpen(false)}
+        className={`fixed inset-0 bg-black/50 lg:hidden transition-opacity z-30 ${
+          isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
+      <div
+        className={`fixed lg:static left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-200 p-4 md:p-6 flex flex-col z-30 transform transition-transform lg:transform-none ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <h1 className="hidden lg:block text-2xl font-black text-slate-900 mb-8">Admin Panel</h1>
+
+        <nav className="space-y-2 md:space-y-3 flex-1">
+          <TabButton
+            label="Tableau de bord"
+            icon={DashboardIcon}
+            active={activeTab === 'dashboard'}
+            onClick={() => {
+              setActiveTab('dashboard');
+              setIsSidebarOpen(false);
+            }}
+          />
+          <TabButton
+            label="Dépôt Relais"
+            icon={DepotIcon}
+            active={activeTab === 'depot'}
+            onClick={() => {
+              setActiveTab('depot');
+              setIsSidebarOpen(false);
+            }}
+            badge={depots.length}
+          />
+          <TabButton
+            label="Gestion Stock"
+            icon={StockIcon}
+            active={activeTab === 'stock'}
+            onClick={() => {
+              setActiveTab('stock');
+              setIsSidebarOpen(false);
+            }}
+            badge={stocks.length}
+          />
+          <TabButton
+            label="Ventes"
+            icon={SalesIcon}
+            active={activeTab === 'ventes'}
+            onClick={() => {
+              setActiveTab('ventes');
+              setIsSidebarOpen(false);
+            }}
+            badge={sales.length}
+          />
+          <TabButton
+            label="Clients"
+            icon={ClientsIcon}
+            active={activeTab === 'clients'}
+            onClick={() => {
+              setActiveTab('clients');
+              setIsSidebarOpen(false);
+            }}
+            badge={clients.length}
+          />
+          <TabButton
+            label="Produits"
+            icon={StockIcon}
+            active={activeTab === 'produits'}
+            onClick={() => {
+              setActiveTab('produits');
+              setIsSidebarOpen(false);
+            }}
+            badge={products.length}
+          />
+        </nav>
+
+        <div className="space-y-2 md:space-y-3 border-t border-slate-200 pt-4 md:pt-6">
+          <button 
+            onClick={() => {
+              setActiveTab('settings');
+              setIsSidebarOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 md:py-3 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold transition-colors text-sm md:text-base"
+          >
+            <SettingsIcon size={20} />
+            <span>Audit de Sécurité</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 md:py-3 rounded-lg hover:bg-red-50 text-red-600 font-semibold transition-colors text-sm md:text-base"
+          >
+            <LogoutIcon size={20} />
+            <span>Déconnexion</span>
+          </button>
         </div>
-    );
+      </div>
+
+      {/* Main Content - Responsive Padding */}
+      <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        {renderContent()}
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboard;
+
+interface TabButtonProps {
+  label: string;
+  icon: React.FC<any>;
+  active: boolean;
+  onClick: () => void;
+  badge?: number;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ label, icon: Icon, active, onClick, badge }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-semibold ${
+      active
+        ? 'bg-blue-600 text-white shadow-md'
+        : 'text-slate-700 hover:bg-slate-100'
+    }`}
+  >
+    <Icon size={20} />
+    <span>{label}</span>
+    {badge !== undefined && (
+      <span className={`ml-auto px-2 py-1 rounded-full text-xs font-black ${
+        active ? 'bg-blue-700' : 'bg-slate-200 text-slate-700'
+      }`}>
+        {badge}
+      </span>
+    )}
+  </button>
+);

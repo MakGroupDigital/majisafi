@@ -10,9 +10,12 @@ import HomePage from './components/HomePage';
 import RecyclingProgram from './components/RecyclingProgram';
 import DistributorsPage from './components/DistributorsPage';
 import AdminDashboard from './components/admin/AdminDashboard';
+import LoginPage from './components/LoginPage';
 import { BottleSize, CartItem } from './types';
 import { BOTTLE_PRICES, BRAND_COLORS, COMPANY_INFO } from './constants';
 import { Droplets, Truck, Clock, ShieldCheck, User, CreditCard, Settings as SettingsIcon, Mail, Phone, MapPin, Shield, ArrowUpRight } from 'lucide-react';
+import { supabase } from './utils/supabase';
+import { supabaseAuthService } from './utils/supabase-auth';
 
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -20,17 +23,100 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('accueil');
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Check URL for admin access query param (?admin=true)
+    // Initialiser l'authentification Supabase directement
+    const initAuth = async () => {
+      try {
+        // Initialiser le service d'auth
+        await supabaseAuthService.initialize();
+        
+        // Vérifier la session existante
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Vérifier si l'utilisateur est admin
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (userData?.role === 'admin') {
+            setIsAuthenticated(true);
+          }
+        }
+        
+        // Écouter les changements d'authentification
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (session?.user) {
+            // Vérifier le rôle de l'utilisateur
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (userData?.role === 'admin') {
+              setIsAuthenticated(true);
+            } else {
+              setIsAuthenticated(false);
+              // NE PAS désactiver isAdminMode ici si l'utilisateur essaie d'accéder à l'admin
+            }
+          } else {
+            setIsAuthenticated(false);
+            // NE PAS désactiver isAdminMode automatiquement
+          }
+        });
+        
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error('Erreur initialisation auth:', error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    // Check URL for admin access query param (?admin=true) AVANT l'init auth
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true') {
       setIsAdminMode(true);
     }
 
+    initAuth();
+
     const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    setIsAdminMode(true);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setIsAdminMode(false);
+    setCurrentPage('accueil');
+  };
+
+  // Afficher la page de connexion si mode admin mais pas authentifié
+  if (isAdminMode && !isAuthenticated && !authLoading) {
+    console.log('🔍 Affichage page de connexion:', { isAdminMode, isAuthenticated, authLoading });
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Afficher le dashboard admin si authentifié
+  if (isAdminMode && isAuthenticated) {
+    console.log('🔍 Affichage dashboard admin:', { isAdminMode, isAuthenticated });
+    return <AdminDashboard onLogout={handleLogout} />;
+  }
 
 
   const renderContent = () => {
@@ -111,34 +197,164 @@ const App: React.FC = () => {
           </div>
         );
       case 'profil':
+        const currentUser = supabaseAuthService.getCurrentUser();
+        
+        // Si pas connecté, afficher formulaire de connexion/inscription
+        if (!currentUser) {
+          const [profEmail, setProfEmail] = React.useState('');
+          const [profPassword, setProfPassword] = React.useState('');
+          const [profName, setProfName] = React.useState('');
+          const [isSignup, setIsSignup] = React.useState(false);
+          const [profLoading, setProfLoading] = React.useState(false);
+          const [profError, setProfError] = React.useState('');
+
+          const handleProfAuth = async () => {
+            setProfError('');
+            setProfLoading(true);
+            try {
+              if (isSignup) {
+                const result = await supabaseAuthService.signUp(profEmail, profPassword, 'client', profName);
+                if (result.success) {
+                  setProfEmail('');
+                  setProfPassword('');
+                  setProfName('');
+                  setIsSignup(false);
+                }
+              } else {
+                const result = await supabaseAuthService.signIn(profEmail, profPassword);
+                if (result.success) {
+                  setProfEmail('');
+                  setProfPassword('');
+                }
+              }
+            } catch (err: any) {
+              setProfError(err.message || 'Erreur lors de l\'authentification');
+            } finally {
+              setProfLoading(false);
+            }
+          };
+
+          return (
+            <div className="flex items-center justify-center min-h-[calc(100vh-120px)] p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="w-full max-w-md">
+                <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl">
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl font-black text-slate-900 mb-2">
+                      {isSignup ? 'Créer mon Compte' : 'Se Connecter'}
+                    </h2>
+                    <p className="text-slate-500 text-sm">
+                      {isSignup ? 'Accédez à votre espace personnalisé' : 'Bienvenue chez Maji Safi Ya Kwetu'}
+                    </p>
+                  </div>
+
+                  {profError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm font-medium">
+                      {profError}
+                    </div>
+                  )}
+
+                  <div className="space-y-4 mb-6">
+                    {isSignup && (
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Nom Complet</label>
+                        <input
+                          type="text"
+                          value={profName}
+                          onChange={(e) => setProfName(e.target.value)}
+                          placeholder="Jean Dupont"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0066CC] text-slate-700"
+                          disabled={profLoading}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={profEmail}
+                        onChange={(e) => setProfEmail(e.target.value)}
+                        placeholder="vous@email.com"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0066CC] text-slate-700"
+                        disabled={profLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Mot de Passe</label>
+                      <input
+                        type="password"
+                        value={profPassword}
+                        onChange={(e) => setProfPassword(e.target.value)}
+                        placeholder="Min 8 caractères"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0066CC] text-slate-700"
+                        disabled={profLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleProfAuth}
+                    disabled={profLoading || !profEmail || !profPassword || (isSignup && !profName)}
+                    className="w-full bg-[#0066CC] text-white font-bold py-3 rounded-xl hover:bg-[#005ab8] transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                  >
+                    {profLoading ? '⏳ Chargement...' : (isSignup ? '✓ Créer mon compte' : '→ Se connecter')}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsSignup(!isSignup);
+                      setProfError('');
+                    }}
+                    disabled={profLoading}
+                    className="w-full text-[#0066CC] font-semibold py-2 hover:bg-blue-50 rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {isSignup ? 'Déjà inscrit? Se connecter' : 'Pas encore inscrit? Créer un compte'}
+                  </button>
+
+                  <div className="mt-6 pt-6 border-t border-slate-200 text-center">
+                    <p className="text-xs text-slate-500 mb-3">Vous êtes client à 100% ✓</p>
+                    <div className="flex gap-2 justify-center text-xs text-slate-600">
+                      <span>🔒</span>
+                      <span>Données sécurisées</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Si connecté, afficher le profil
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Tableau de Bord Header - Only on Profile Page */}
+            {/* Tableau de Bord Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
-                <h2 className="text-[10px] font-black text-[#0066CC] uppercase tracking-widest mb-2" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>Tableau de Bord</h2>
-                <h1 className="text-4xl font-black text-slate-900" style={{ fontFamily: 'Helvetica Bold, Arial Bold, sans-serif' }}>Bienvenue chez vous</h1>
+                <h2 className="text-[10px] font-black text-[#0066CC] uppercase tracking-widest mb-2">Tableau de Bord</h2>
+                <h1 className="text-4xl font-black text-slate-900">Bienvenue {currentUser.name}! 👋</h1>
               </div>
-              <div className="flex items-center gap-4 bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map(i => (
-                    <img key={i} className="w-8 h-8 rounded-full border-2 border-white object-cover" src={`https://picsum.photos/100/100?random=${i}`} />
-                  ))}
-                </div>
-                <p className="text-[10px] font-bold text-slate-500 pr-2">
-                  <span className="text-slate-900">12 voisins</span> ont commandé aujourd'hui
-                </p>
-              </div>
+              <button
+                onClick={() => {
+                  supabaseAuthService.signOut();
+                  setCurrentPage('accueil');
+                }}
+                className="bg-red-50 text-red-600 font-bold px-6 py-2 rounded-xl hover:bg-red-100 transition-colors"
+              >
+                Se Déconnecter
+              </button>
             </div>
 
             {/* Profile Content */}
             <div className="bg-white rounded-3xl p-12 border border-slate-100">
               <div className="flex items-center gap-8 mb-12">
-                <img src="https://picsum.photos/seed/user123/200/200" className="w-32 h-32 rounded-3xl object-cover shadow-xl" />
+                <div className="w-32 h-32 rounded-3xl bg-blue-100 flex items-center justify-center text-5xl shadow-xl">
+                  👤
+                </div>
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900">Alex Johnson</h2>
-                  <p className="text-slate-500 mb-4">alex.j@example.com • Kinshasa, RDC</p>
-                  <span className="bg-blue-50 text-[#0066CC] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Membre Premium</span>
+                  <h2 className="text-3xl font-black text-slate-900">{currentUser.name}</h2>
+                  <p className="text-slate-500 mb-4">{currentUser.email} • Kinshasa, RDC</p>
+                  <span className="bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Client ✓</span>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -212,6 +428,15 @@ const App: React.FC = () => {
     );
   }
 
+  // Debug logs
+  console.log('🔍 États actuels:', { 
+    isAdminMode, 
+    isAuthenticated, 
+    authLoading, 
+    currentPage,
+    url: window.location.href 
+  });
+
   if (isAdminMode) {
     return <AdminDashboard onLogout={() => setIsAdminMode(false)} />;
   }
@@ -230,6 +455,10 @@ const App: React.FC = () => {
           onToggleMenu={() => setIsMenuOpen(!isMenuOpen)}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
+          onAdminAccess={() => {
+            setIsAdminMode(true);
+            setIsAuthenticated(false); // Forcer l'affichage de la page de connexion
+          }}
         />
 
         {/* Menu mobile */}
