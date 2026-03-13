@@ -103,3 +103,13 @@ export const ClientsStatsIcon: React.FC<{ size?: number; className?: string }> =
     <path d="M16 24c0-3 2-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
+// Logistics/Truck Icon
+export const LogisticsIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 18H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="17" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
+    <circle cx="7" cy="18" r="2" stroke="currentColor" strokeWidth="2" />
+  </svg>
+);

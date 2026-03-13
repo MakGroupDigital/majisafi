@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { clientsAPI, depotsAPI, stockAPI, salesAPI, productsAPI, auditAPI } from '../utils/supabase';
+import { clientsAPI, depotsAPI, stockAPI, salesAPI, productsAPI, auditAPI, vehiclesAPI, driversAPI, deliveriesAPI } from '../utils/supabase';
 import { Client, DepotRelais, StockItem, Sale, Product } from '../types';
 
 // Hook pour récupérer les clients
@@ -337,4 +337,172 @@ export function useAuditLogs(action?: string, limit = 100) {
   }, [action, limit]);
 
   return { logs, loading, error };
+}
+// Hook pour récupérer les véhicules
+export function useVehicles() {
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setLoading(true);
+        const data = await vehiclesAPI.getAll();
+        setVehicles(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+        setVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicles();
+  }, []);
+
+  const addVehicle = async (vehicle: any) => {
+    try {
+      const newVehicle = await vehiclesAPI.create(vehicle);
+      setVehicles([newVehicle, ...vehicles]);
+      return newVehicle;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  const updateVehicle = async (id: string, updates: any) => {
+    try {
+      const updated = await vehiclesAPI.update(id, updates);
+      setVehicles(vehicles.map(v => v.id === id ? updated : v));
+      return updated;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  const deleteVehicle = async (id: string) => {
+    try {
+      await vehiclesAPI.delete(id);
+      setVehicles(vehicles.filter(v => v.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  return { vehicles, loading, error, addVehicle, updateVehicle, deleteVehicle };
+}
+
+// Hook pour récupérer les chauffeurs
+export function useDrivers() {
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        setLoading(true);
+        const data = await driversAPI.getAll();
+        setDrivers(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+        setDrivers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDrivers();
+  }, []);
+
+  const addDriver = async (driver: any) => {
+    try {
+      const newDriver = await driversAPI.create(driver);
+      setDrivers([newDriver, ...drivers]);
+      return newDriver;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  const updateDriver = async (id: string, updates: any) => {
+    try {
+      const updated = await driversAPI.update(id, updates);
+      setDrivers(drivers.map(d => d.id === id ? updated : d));
+      return updated;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  const deleteDriver = async (id: string) => {
+    try {
+      await driversAPI.delete(id);
+      setDrivers(drivers.filter(d => d.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  return { drivers, loading, error, addDriver, updateDriver, deleteDriver };
+}
+
+// Hook pour récupérer les livraisons
+export function useDeliveries() {
+  const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDeliveries = async () => {
+      try {
+        setLoading(true);
+        const data = await deliveriesAPI.getAll();
+        setDeliveries(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+        setDeliveries([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDeliveries();
+  }, []);
+
+  const addDelivery = async (delivery: any, items: any[]) => {
+    try {
+      const newDelivery = await deliveriesAPI.create(delivery, items);
+      // Recharger les données pour avoir les relations
+      const data = await deliveriesAPI.getAll();
+      setDeliveries(data);
+      return newDelivery;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  const updateDeliveryStatus = async (id: string, status: string, notes?: string) => {
+    try {
+      const updated = await deliveriesAPI.updateStatus(id, status, notes);
+      setDeliveries(deliveries.map(d => d.id === id ? { ...d, ...updated } : d));
+      return updated;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      throw err;
+    }
+  };
+
+  return { deliveries, loading, error, addDelivery, updateDeliveryStatus };
 }

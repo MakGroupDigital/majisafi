@@ -719,3 +719,334 @@ export const auditAPI = {
     return data;
   },
 };
+// ============ LOGISTICS API ============
+
+export const vehiclesAPI = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*, depots(name)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async create(vehicle: any) {
+    const { data, error } = await supabase
+      .from('vehicles')
+      .insert([vehicle])
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    await auditAPI.log({
+      action_type: 'CREATE',
+      entity_type: 'vehicle',
+      entity_id: data.id,
+      entity_name: data.license_plate,
+      new_values: data,
+      description: `Véhicule créé: ${data.license_plate}`
+    });
+    
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data: oldData } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { data, error } = await supabase
+      .from('vehicles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    await auditAPI.log({
+      action_type: 'UPDATE',
+      entity_type: 'vehicle',
+      entity_id: data.id,
+      entity_name: data.license_plate,
+      old_values: oldData,
+      new_values: data,
+      description: `Véhicule modifié: ${data.license_plate}`
+    });
+    
+    return data;
+  },
+
+  async delete(id: string) {
+    const { data: vehicleData } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { error } = await supabase
+      .from('vehicles')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    if (vehicleData) {
+      await auditAPI.log({
+        action_type: 'DELETE',
+        entity_type: 'vehicle',
+        entity_id: id,
+        entity_name: vehicleData.license_plate,
+        old_values: vehicleData,
+        description: `Véhicule supprimé: ${vehicleData.license_plate}`
+      });
+    }
+  },
+};
+
+export const driversAPI = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('drivers')
+      .select('*, depots(name)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async create(driver: any) {
+    const { data, error } = await supabase
+      .from('drivers')
+      .insert([driver])
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    await auditAPI.log({
+      action_type: 'CREATE',
+      entity_type: 'driver',
+      entity_id: data.id,
+      entity_name: `${data.first_name} ${data.last_name}`,
+      new_values: data,
+      description: `Chauffeur créé: ${data.first_name} ${data.last_name}`
+    });
+    
+    return data;
+  },
+
+  async update(id: string, updates: any) {
+    const { data: oldData } = await supabase
+      .from('drivers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { data, error } = await supabase
+      .from('drivers')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    await auditAPI.log({
+      action_type: 'UPDATE',
+      entity_type: 'driver',
+      entity_id: data.id,
+      entity_name: `${data.first_name} ${data.last_name}`,
+      old_values: oldData,
+      new_values: data,
+      description: `Chauffeur modifié: ${data.first_name} ${data.last_name}`
+    });
+    
+    return data;
+  },
+
+  async delete(id: string) {
+    const { data: driverData } = await supabase
+      .from('drivers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { error } = await supabase
+      .from('drivers')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    if (driverData) {
+      await auditAPI.log({
+        action_type: 'DELETE',
+        entity_type: 'driver',
+        entity_id: id,
+        entity_name: `${driverData.first_name} ${driverData.last_name}`,
+        old_values: driverData,
+        description: `Chauffeur supprimé: ${driverData.first_name} ${driverData.last_name}`
+      });
+    }
+  },
+};
+
+export const deliveriesAPI = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('deliveries')
+      .select(`
+        *,
+        depots(name),
+        drivers(first_name, last_name, phone),
+        vehicles(license_plate, vehicle_type),
+        delivery_items(*)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async getByStatus(status: string) {
+    const { data, error } = await supabase
+      .from('deliveries')
+      .select(`
+        *,
+        depots(name),
+        drivers(first_name, last_name, phone),
+        vehicles(license_plate, vehicle_type),
+        delivery_items(*)
+      `)
+      .eq('status', status)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async create(delivery: any, items: any[]) {
+    // Créer la livraison
+    const { data: deliveryData, error: deliveryError } = await supabase
+      .from('deliveries')
+      .insert([delivery])
+      .select()
+      .single();
+    
+    if (deliveryError) throw new Error(deliveryError.message);
+
+    // Créer les articles de livraison
+    const itemsWithDeliveryId = items.map(item => ({
+      ...item,
+      delivery_id: deliveryData.id,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('delivery_items')
+      .insert(itemsWithDeliveryId);
+    
+    if (itemsError) throw new Error(itemsError.message);
+
+    // Log audit
+    await auditAPI.log({
+      action_type: 'CREATE',
+      entity_type: 'delivery',
+      entity_id: deliveryData.id,
+      entity_name: deliveryData.order_id,
+      new_values: { delivery: deliveryData, items: itemsWithDeliveryId },
+      description: `Livraison créée: ${deliveryData.order_id}`
+    });
+    
+    return deliveryData;
+  },
+
+  async updateStatus(id: string, status: string, notes?: string) {
+    const updates: any = { status };
+    if (notes) updates.notes = notes;
+    if (status === 'delivered') updates.actual_delivery_time = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('deliveries')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    
+    // Log audit
+    await auditAPI.log({
+      action_type: 'UPDATE',
+      entity_type: 'delivery',
+      entity_id: data.id,
+      entity_name: data.order_id,
+      new_values: { status, notes },
+      description: `Statut livraison modifié: ${data.order_id} -> ${status}`
+    });
+    
+    return data;
+  },
+};
+
+export const gpsTrackingAPI = {
+  async addLocation(vehicleId: string, deliveryId: string | null, location: {
+    latitude: number;
+    longitude: number;
+    speed?: number;
+    heading?: number;
+    altitude?: number;
+    accuracy?: number;
+  }) {
+    const { data, error } = await supabase
+      .from('gps_tracking')
+      .insert([{
+        vehicle_id: vehicleId,
+        delivery_id: deliveryId,
+        ...location
+      }])
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  async getLatestLocation(vehicleId: string) {
+    const { data, error } = await supabase
+      .from('gps_tracking')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw new Error(error.message);
+    return data;
+  },
+
+  async getTrackingHistory(vehicleId: string, hours = 24) {
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+    
+    const { data, error } = await supabase
+      .from('gps_tracking')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .gte('timestamp', since)
+      .order('timestamp', { ascending: true });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
+};

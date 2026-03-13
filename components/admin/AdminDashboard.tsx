@@ -4,6 +4,7 @@ import StockManagement from './StockManagement';
 import SalesManagement from './SalesManagement';
 import ClientManagement from './ClientManagement';
 import ProductsManagement from './ProductsManagement';
+import LogisticsManagement from './LogisticsManagement';
 import SecurityAudit from './SecurityAudit';
 import { 
   DashboardIcon, 
@@ -11,6 +12,7 @@ import {
   StockIcon, 
   SalesIcon, 
   ClientsIcon, 
+  LogisticsIcon,
   SettingsIcon, 
   LogoutIcon, 
   MenuIcon, 
@@ -23,7 +25,7 @@ import {
 import { DepotRelais, StockItem, Sale, Client } from '../../types';
 import { useDepots, useStock, useSales, useClients, useProducts } from '../../hooks/useSupabaseData';
 
-type AdminTab = 'dashboard' | 'depot' | 'stock' | 'ventes' | 'clients' | 'produits' | 'settings';
+type AdminTab = 'dashboard' | 'depot' | 'stock' | 'ventes' | 'clients' | 'produits' | 'logistique' | 'settings';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -75,6 +77,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         return <ClientManagement clients={clients} setClients={(c) => { clients.length = 0; clients.push(...c); }} />;
       case 'produits':
         return <ProductsManagement products={products} setProducts={(p) => { products.length = 0; products.push(...p); }} />;
+      case 'logistique':
+        return <LogisticsManagement />;
       case 'settings':
         return <SecurityAudit />;
       default:
@@ -240,6 +244,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               setIsSidebarOpen(false);
             }}
             badge={products.length}
+          />
+          <TabButton
+            label="Logistique"
+            icon={LogisticsIcon}
+            active={activeTab === 'logistique'}
+            onClick={() => {
+              setActiveTab('logistique');
+              setIsSidebarOpen(false);
+            }}
           />
         </nav>
 
